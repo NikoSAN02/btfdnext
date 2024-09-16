@@ -1,7 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
-
+import { ConnectButton } from "thirdweb/react";
+import { client } from '@/app/client';
 const Header = () => {
+
   return (
     <header className="bg-gradient-to-r from-purple-900 to-purple-500 text-white p-4 font-inter">
       <div className="container mx-auto flex justify-between items-center">
@@ -16,12 +18,8 @@ const Header = () => {
         </nav>
         
         <div className="flex space-x-3">
-          <button className="bg-purple-800 hover:bg-purple-700 text-white px-5 py-2 rounded transition-colors text-lg">
-            Wallet
-          </button>
-          <button className="bg-pink-500 hover:bg-pink-400 text-white px-5 py-2 rounded transition-colors text-lg">
-            Wallet
-          </button>
+          
+        <ConnectButton client={client} />;
         </div>
       </div>
     </header>
