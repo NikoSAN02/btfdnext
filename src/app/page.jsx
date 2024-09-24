@@ -1,12 +1,10 @@
-import Image from "next/image";
-import HomePage from "@/components/HomePage"; 
-import Header from "@/components/Header";
+import HomePage from '@/components/HomePage'; // Assuming you have this component
+import GamesPage from '../components/GamePage';
 
 export default function Home() {
   return (
-      <>
-      <Header/>
-      <HomePage/>
-      </>
+    <div>
+      <HomePage />
+    </div>
   );
 }
