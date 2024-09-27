@@ -95,7 +95,7 @@ const MinesGame = () => {
         {row.map((isMine, x) => (
           <button
             key={`${x}-${y}`}
-            className={`w-20 h-20 m-1 rounded-md flex items-center justify-center ${
+            className={`w-28 h-28 m-1 rounded-md flex items-center justify-center ${
               revealed[y][x]
                 ? isMine
                   ? 'bg-red-500'
@@ -118,7 +118,7 @@ const MinesGame = () => {
 
   return (
     <div className="flex bg-gray-900 text-white p-8 rounded-lg h-screen">
-      <div className="w-1/3 pr-8 flex flex-col">
+      <div className="w-2/4 pr-8 flex flex-col justify-center">
         <div className="mb-4 flex justify-between">
           <button className="bg-gray-700 px-4 py-2 rounded">Manual</button>
           <button className="bg-gray-800 px-4 py-2 rounded" disabled>Auto</button>
