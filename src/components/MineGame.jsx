@@ -190,10 +190,20 @@ const MinesGame = () => {
   const [gameStateHash, setGameStateHash] = useState(null);
   const [revealedGems, setRevealedGems] = useState(0);
   const [depositAmount, setDepositAmount] = useState(0);
+  const [withdrawAmount, setWithdrawAmount] = useState(0);
+  const [withdrawalStatus, setWithdrawalStatus] = useState(null);
+
 
   useEffect(() => {
     initializeEthers();
   }, []);
+
+  useEffect(() => {
+    if (contract && signer) {
+      checkGameInProgress();
+      updateBalance();
+    }
+  }, [contract, signer]);
 
   useEffect(() => {
     initializeGame();
@@ -202,16 +212,12 @@ const MinesGame = () => {
   const initializeEthers = async () => {
     if (typeof window.ethereum !== 'undefined') {
       try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        console.log("Connected accounts:", accounts);
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
         const provider = new ethers.BrowserProvider(window.ethereum);
         const newSigner = await provider.getSigner();
         setSigner(newSigner);
-        const signerAddress = await newSigner.getAddress();
-        console.log("Signer address:", signerAddress);
         const gameContract = new ethers.Contract(contractAddress, contractABI, newSigner);
         setContract(gameContract);
-        await updateBalance(gameContract, newSigner);
       } catch (error) {
         console.error("Error initializing ethers:", error);
       }
@@ -220,13 +226,28 @@ const MinesGame = () => {
     }
   };
 
-  const updateBalance = async (contractInstance, signerInstance) => {
-    if (contractInstance && signerInstance) {
+  const checkGameInProgress = async () => {
+    try {
+      const address = await signer.getAddress();
+      const gameState = await contract.getGameState(address);
+      if (gameState.isActive) {
+        setGameStarted(true);
+        setBetAmount(ethers.formatEther(gameState.betAmount));
+        setMines(Number(gameState.mines));
+        setGems(Number(gameState.gems));
+        setGameStateHash(gameState.gameStateHash);
+        console.log("Game in progress loaded");
+      }
+    } catch (error) {
+      console.error("Error checking game state:", error);
+    }
+  };
+
+  const updateBalance = async () => {
+    if (contract && signer) {
       try {
-        const address = await signerInstance.getAddress();
-        console.log("Fetching balance for address:", address);
-        const balance = await contractInstance.playerBalances(address);
-        console.log("Raw balance:", balance.toString());
+        const address = await signer.getAddress();
+        const balance = await contract.getBalance(address);
         setBalance(ethers.formatEther(balance));
       } catch (error) {
         console.error("Error updating balance:", error);
@@ -288,7 +309,7 @@ const MinesGame = () => {
     try {
       const tx = await contract.endGame(revealedGems, 0, gameStateHash);
       await tx.wait();
-      await updateBalance(contract, signer);
+      await updateBalance();
     } catch (error) {
       console.error("Error ending game:", error);
     }
@@ -301,10 +322,99 @@ const MinesGame = () => {
         const tx = await contract.deposit({ value: depositValue });
         await tx.wait();
         console.log("Deposit successful");
-        await updateBalance(contract, signer);
+        await updateBalance();
         setDepositAmount(0);
       } catch (error) {
         console.error("Error depositing:", error);
+      }
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (contract && signer && withdrawAmount > 0) {
+      try {
+        setWithdrawalStatus('pending');
+        const withdrawValue = ethers.parseEther(withdrawAmount.toString());
+        const tx = await contract.withdraw(withdrawValue);
+        await tx.wait();
+        console.log("Withdrawal successful");
+        await updateBalance();
+        setWithdrawAmount(0);
+        setWithdrawalStatus('success');
+      } catch (error) {
+        console.error("Error withdrawing:", error);
+        setWithdrawalStatus('error');
+      }
+    }
+  };
+
+  const getGasPrice = async (provider) => {
+    try {
+      // Try EIP-1559 fee data first
+      const feeData = await provider.getFeeData();
+      if (feeData.maxFeePerGas) {
+        return feeData.maxFeePerGas;
+      }
+    } catch (error) {
+      console.warn("EIP-1559 fee estimation failed, falling back to legacy gas price");
+    }
+
+    // Fallback to legacy gas price
+    return provider.getGasPrice();
+  };
+
+  const handleCashOutAll = async () => {
+    if (contract && signer && parseFloat(balance) > 0) {
+      try {
+        setWithdrawalStatus('pending');
+        
+        // Get the current gas price
+        const gasPrice = await signer.provider.getGasPrice();
+
+        if (!gasPrice) {
+          throw new Error("Unable to estimate gas price");
+        }
+        
+        // Estimate the gas limit for the withdrawal transaction
+        const withdrawalAmount = ethers.parseEther(balance);
+        const gasLimit = await contract.withdraw.estimateGas(withdrawalAmount);
+        
+        // Calculate the total gas cost
+        const gasCost = gasPrice * gasLimit;
+        
+        // Convert gasCost to Ether
+        const gasCostEther = ethers.formatEther(gasCost);
+        
+        // Calculate the maximum amount we can withdraw
+        const maxWithdraw = ethers.parseEther(balance).sub(gasCost);
+        
+        if (maxWithdraw.lte(0)) {
+          setWithdrawalStatus('error');
+          throw new Error("Insufficient balance to cover gas costs");
+        }
+        
+        // Ask for user confirmation
+        const confirmWithdraw = window.confirm(
+          `Estimated gas cost: ${parseFloat(gasCostEther).toFixed(6)} ETH\n` +
+          `You will receive approximately: ${ethers.formatEther(maxWithdraw)} ETH\n` +
+          `Do you want to proceed with the withdrawal?`
+        );
+        
+        if (!confirmWithdraw) {
+          setWithdrawalStatus(null);
+          return;
+        }
+        
+        // Withdraw the maximum possible amount
+        const tx = await contract.withdraw(maxWithdraw);
+        await tx.wait();
+        
+        console.log("Full balance withdrawal successful");
+        await updateBalance();
+        setWithdrawalStatus('success');
+      } catch (error) {
+        console.error("Error withdrawing full balance:", error);
+        setWithdrawalStatus('error');
       }
     }
   };
@@ -316,9 +426,15 @@ const MinesGame = () => {
           const tx = await contract.startGame(ethers.parseEther(betAmount.toString()), mines, gems, gameStateHash);
           await tx.wait();
           setGameStarted(true);
-          await updateBalance(contract, signer);
+          await updateBalance();
         } catch (error) {
-          console.error("Error starting game:", error);
+          if (error.reason === "Game already in progress") {
+            console.log("Game already in progress. Continuing the existing game.");
+            setGameStarted(true);
+            await checkGameInProgress(); // Load the existing game state
+          } else {
+            console.error("Error starting game:", error);
+          }
         }
       }
     } else {
@@ -327,7 +443,8 @@ const MinesGame = () => {
         const tx = await contract.endGame(revealedGems, multiplier, gameStateHash);
         await tx.wait();
         setGameStarted(false);
-        await updateBalance(contract, signer);
+        initializeGame(); // Reset the game state
+        await updateBalance();
       } catch (error) {
         console.error("Error ending game:", error);
       }
@@ -379,8 +496,15 @@ const MinesGame = () => {
       <div className="w-2/4 pr-8 flex flex-col justify-center">
         <div className="mb-4">
           <label className="block mb-2">Balance</label>
-          <div className="bg-gray-800 text-white p-2 rounded w-full">
-            ${parseFloat(balance).toFixed(2)}
+          <div className="bg-gray-800 text-white p-2 rounded w-full flex justify-between items-center">
+            <span>${parseFloat(balance).toFixed(2)}</span>
+            <button 
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-200"
+              onClick={handleCashOutAll}
+              disabled={parseFloat(balance) <= 0}
+            >
+              Cash Out All
+            </button>
           </div>
         </div>
         <div className="mb-4">
@@ -402,7 +526,36 @@ const MinesGame = () => {
           </div>
         </div>
         <div className="mb-4">
-          <label className="block mb-2">Bet Amount: ${betAmount.toFixed(2)}</label>
+          <label className="block mb-2">Withdraw Amount</label>
+          <div className="flex items-center">
+            <input
+              type="number"
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(parseFloat(e.target.value))}
+              className="bg-gray-800 text-white p-2 rounded-l w-full"
+              step="0.01"
+            />
+            <button 
+              className="bg-red-500 p-2 rounded-r"
+              onClick={handleWithdraw}
+            >
+              Withdraw
+            </button>
+          </div>
+        </div>
+        {withdrawalStatus && (
+          <div className={`mb-4 p-2 rounded ${
+            withdrawalStatus === 'success' ? 'bg-green-500' :
+            withdrawalStatus === 'error' ? 'bg-red-500' :
+            'bg-yellow-500'
+          }`}>
+            {withdrawalStatus === 'success' && 'Withdrawal successful!'}
+            {withdrawalStatus === 'error' && 'Withdrawal failed. Please try again.'}
+            {withdrawalStatus === 'pending' && 'Processing withdrawal...'}
+          </div>
+        )}
+        <div className="mb-4">
+          <label className="block mb-2">Bet Amount: ${typeof betAmount === 'number' ? betAmount.toFixed(2) : '0.00'}</label>
           <div className="flex items-center">
             <input
               type="number"
