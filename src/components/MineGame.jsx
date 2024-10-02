@@ -5,174 +5,374 @@ import { ethers } from 'ethers';
 // Correct ABI from the provided JSON
 const contractABI = [
   {
-     "inputs":[],
-     "stateMutability":"nonpayable",
-     "type":"constructor"
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
   },
   {
-     "inputs":[{"internalType":"address","name":"owner","type":"address"}],
-     "name":"OwnableInvalidOwner",
-     "type":"error"
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableInvalidOwner",
+    "type": "error"
   },
   {
-     "inputs":[{"internalType":"address","name":"account","type":"address"}],
-     "name":"OwnableUnauthorizedAccount",
-     "type":"error"
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableUnauthorizedAccount",
+    "type": "error"
   },
   {
-     "anonymous":false,
-     "inputs":[
-        {"indexed":true,"internalType":"address","name":"player","type":"address"},
-        {"indexed":false,"internalType":"uint256","name":"winAmount","type":"uint256"},
-        {"indexed":false,"internalType":"bytes32","name":"gameStateHash","type":"bytes32"}
-     ],
-     "name":"GameEnded",
-     "type":"event"
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "winAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "gameStateHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "GameEnded",
+    "type": "event"
   },
   {
-     "anonymous":false,
-     "inputs":[
-        {"indexed":true,"internalType":"address","name":"player","type":"address"},
-        {"indexed":false,"internalType":"uint256","name":"betAmount","type":"uint256"},
-        {"indexed":false,"internalType":"uint256","name":"mines","type":"uint256"},
-        {"indexed":false,"internalType":"uint256","name":"gems","type":"uint256"},
-        {"indexed":false,"internalType":"bytes32","name":"gameStateHash","type":"bytes32"}
-     ],
-     "name":"GameStarted",
-     "type":"event"
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "betAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "mines",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "gems",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "gameStateHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "GameStarted",
+    "type": "event"
   },
   {
-     "anonymous":false,
-     "inputs":[
-        {"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},
-        {"indexed":true,"internalType":"address","name":"newOwner","type":"address"}
-     ],
-     "name":"OwnershipTransferred",
-     "type":"event"
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
   },
   {
-     "inputs":[],
-     "name":"MAX_BET",
-     "outputs":[{"internalType":"uint256","name":"","type":"uint256"}],
-     "stateMutability":"view",
-     "type":"function"
+    "inputs": [],
+    "name": "MAX_BET",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-     "inputs":[],
-     "name":"MIN_BET",
-     "outputs":[{"internalType":"uint256","name":"","type":"uint256"}],
-     "stateMutability":"view",
-     "type":"function"
+    "inputs": [],
+    "name": "MIN_BET",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-     "inputs":[],
-     "name":"deposit",
-     "outputs":[],
-     "stateMutability":"payable",
-     "type":"function"
+    "inputs": [],
+    "name": "deposit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
   },
   {
-     "inputs":[
-        {"internalType":"uint256","name":"revealedGems","type":"uint256"},
-        {"internalType":"uint256","name":"multiplier","type":"uint256"},
-        {"internalType":"bytes32","name":"gameStateHash","type":"bytes32"}
-     ],
-     "name":"endGame",
-     "outputs":[],
-     "stateMutability":"nonpayable",
-     "type":"function"
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "revealedGems",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "multiplier",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "gameStateHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "endGame",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-     "inputs":[{"internalType":"address","name":"","type":"address"}],
-     "name":"games",
-     "outputs":[
-        {"internalType":"address","name":"player","type":"address"},
-        {"internalType":"uint256","name":"betAmount","type":"uint256"},
-        {"internalType":"uint256","name":"mines","type":"uint256"},
-        {"internalType":"uint256","name":"gems","type":"uint256"},
-        {"internalType":"bytes32","name":"gameStateHash","type":"bytes32"},
-        {"internalType":"bool","name":"isActive","type":"bool"}
-     ],
-     "stateMutability":"view",
-     "type":"function"
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "games",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "betAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "mines",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "gems",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "gameStateHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bool",
+        "name": "isActive",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-     "inputs":[{"internalType":"address","name":"player","type":"address"}],
-     "name":"getBalance",
-     "outputs":[{"internalType":"uint256","name":"","type":"uint256"}],
-     "stateMutability":"view",
-     "type":"function"
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      }
+    ],
+    "name": "getBalance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-     "inputs":[{"internalType":"address","name":"player","type":"address"}],
-     "name":"getGameState",
-     "outputs":[
-        {"internalType":"bool","name":"isActive","type":"bool"},
-        {"internalType":"uint256","name":"betAmount","type":"uint256"},
-        {"internalType":"uint256","name":"mines","type":"uint256"},
-        {"internalType":"uint256","name":"gems","type":"uint256"},
-        {"internalType":"bytes32","name":"gameStateHash","type":"bytes32"}
-     ],
-     "stateMutability":"view",
-     "type":"function"
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "player",
+        "type": "address"
+      }
+    ],
+    "name": "getGameState",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "isActive",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "betAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "mines",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "gems",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "gameStateHash",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-     "inputs":[],
-     "name":"owner",
-     "outputs":[{"internalType":"address","name":"","type":"address"}],
-     "stateMutability":"view",
-     "type":"function"
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-     "inputs":[],
-     "name":"ownerWithdraw",
-     "outputs":[],
-     "stateMutability":"nonpayable",
-     "type":"function"
+    "inputs": [],
+    "name": "ownerWithdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-     "inputs":[{"internalType":"address","name":"","type":"address"}],
-     "name":"playerBalances",
-     "outputs":[{"internalType":"uint256","name":"","type":"uint256"}],
-     "stateMutability":"view",
-     "type":"function"
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "playerBalances",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-     "inputs":[],
-     "name":"renounceOwnership",
-     "outputs":[],
-     "stateMutability":"nonpayable",
-     "type":"function"
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-     "inputs":[
-        {"internalType":"uint256","name":"betAmount","type":"uint256"},
-        {"internalType":"uint256","name":"mines","type":"uint256"},
-        {"internalType":"uint256","name":"gems","type":"uint256"},
-        {"internalType":"bytes32","name":"gameStateHash","type":"bytes32"}
-     ],
-     "name":"startGame",
-     "outputs":[],
-     "stateMutability":"nonpayable",
-     "type":"function"
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "betAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "mines",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "gems",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "gameStateHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "startGame",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-     "inputs":[{"internalType":"address","name":"newOwner","type":"address"}],
-     "name":"transferOwnership",
-     "outputs":[],
-     "stateMutability":"nonpayable",
-     "type":"function"
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-     "inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],
-     "name":"withdraw",
-     "outputs":[],
-     "stateMutability":"nonpayable",
-     "type":"function"
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ];
 
-const contractAddress = "0x848760d34317bbe065Ed993f4bFff61d5817DA5B";
+const contractAddress = "0x52E16064d986C23aB3aDA469621a08606412D803";
 
 const MinesGame = () => {
   const [size] = useState(5);
@@ -192,7 +392,7 @@ const MinesGame = () => {
   const [depositAmount, setDepositAmount] = useState(0);
   const [withdrawAmount, setWithdrawAmount] = useState(0);
   const [withdrawalStatus, setWithdrawalStatus] = useState(null);
-
+  const [gameStatus, setGameStatus] = useState('idle'); // Can be 'idle', 'playing', 'won', or 'lost'
 
   useEffect(() => {
     initializeEthers();
@@ -232,6 +432,7 @@ const MinesGame = () => {
       const gameState = await contract.getGameState(address);
       if (gameState.isActive) {
         setGameStarted(true);
+        setGameStatus('playing');
         setBetAmount(ethers.formatEther(gameState.betAmount));
         setMines(Number(gameState.mines));
         setGems(Number(gameState.gems));
@@ -273,12 +474,12 @@ const MinesGame = () => {
     setCurrentMultiplier(1);
     setPotentialWin(0);
     setRevealedGems(0);
+    setGameStarted(false);
+    setGameStatus('idle');
     
-    // Generate game state hash
     const gameStateHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(newBoard)));
     setGameStateHash(gameStateHash);
   };
-
   const calculateMultiplier = (clickCount) => {
     const totalTiles = size * size;
     const safeTiles = totalTiles - mines;
@@ -287,31 +488,26 @@ const MinesGame = () => {
     return (houseEdge / probability) * (1 + clickCount * 0.1);
   };
 
-  const handleTileClick = (x, y) => {
-    if (!gameStarted || revealed[y][x]) return;
-    const newRevealed = [...revealed];
-    newRevealed[y][x] = true;
-    setRevealed(newRevealed);
-
-    if (board[y][x]) {
-      handleLoss();
-    } else {
-      const revealedCount = newRevealed.flat().filter(Boolean).length;
-      setRevealedGems(revealedCount);
-      const newMultiplier = calculateMultiplier(revealedCount);
-      setCurrentMultiplier(newMultiplier);
-      setPotentialWin(betAmount * newMultiplier);
-    }
-  };
-
   const handleLoss = async () => {
+    setGameStatus('lost');
     setGameStarted(false);
+    setPotentialWin(0);
+    setCurrentMultiplier(0);
     try {
-      const tx = await contract.endGame(revealedGems, 0, gameStateHash);
+      const lossMultiplier = 0;
+      console.log("Ending game with loss. Revealed gems:", revealedGems, "Multiplier:", lossMultiplier, "Game state hash:", gameStateHash);
+      const tx = await contract.endGame(revealedGems, lossMultiplier, gameStateHash);
       await tx.wait();
+      console.log("Game ended successfully");
       await updateBalance();
+      // Reset game state after loss
+      setTimeout(() => {
+        initializeGame();
+        setGameStatus('idle');
+      }, 2000); // Delay to allow players to see the revealed mines
     } catch (error) {
       console.error("Error ending game:", error);
+      setWithdrawalStatus('error');
     }
   };
 
@@ -348,53 +544,78 @@ const MinesGame = () => {
     }
   };
 
-  const getGasPrice = async (provider) => {
-    try {
-      // Try EIP-1559 fee data first
-      const feeData = await provider.getFeeData();
-      if (feeData.maxFeePerGas) {
-        return feeData.maxFeePerGas;
+  const handleTileClick = (x, y) => {
+    if (gameStatus !== 'playing') return;
+  
+    const newRevealed = [...revealed];
+    newRevealed[y][x] = true;
+    setRevealed(newRevealed);
+  
+    if (board[y][x]) {
+      // Hit a mine
+      setGameStatus('lost');
+      // Reveal all mines
+      const allRevealed = board.map((row, rowIndex) =>
+        row.map((cell, colIndex) => cell || newRevealed[rowIndex][colIndex])
+      );
+      setRevealed(allRevealed);
+      handleLoss();
+    } else {
+      // Revealed a gem
+      const newRevealedGems = revealedGems + 1;
+      setRevealedGems(newRevealedGems);
+      const newMultiplier = calculateMultiplier(newRevealedGems);
+      setCurrentMultiplier(newMultiplier);
+      setPotentialWin(betAmount * newMultiplier);
+  
+      // Check if all non-mine tiles are revealed
+      const allNonMinesRevealed = board.every((row, rowIndex) =>
+        row.every((cell, colIndex) => cell || newRevealed[rowIndex][colIndex])
+      );
+      if (allNonMinesRevealed) {
+        setGameStatus('won');
+        handleWin();
       }
-    } catch (error) {
-      console.warn("EIP-1559 fee estimation failed, falling back to legacy gas price");
     }
+  };
+  
 
-    // Fallback to legacy gas price
-    return provider.getGasPrice();
+  const handleWin = async () => {
+    try {
+      const winMultiplier = Math.floor(currentMultiplier * 100); // Convert to integer for contract
+      const tx = await contract.endGame(revealedGems, winMultiplier, gameStateHash);
+      await tx.wait();
+      console.log("Game ended successfully - Win");
+      await updateBalance();
+      setGameStarted(false);
+      initializeGame();
+    } catch (error) {
+      console.error("Error ending game (win):", error);
+    }
   };
 
   const handleCashOutAll = async () => {
     if (contract && signer && parseFloat(balance) > 0) {
       try {
         setWithdrawalStatus('pending');
-        
-        // Get the current gas price
         const gasPrice = await signer.provider.getGasPrice();
-
         if (!gasPrice) {
           throw new Error("Unable to estimate gas price");
         }
-        
-        // Estimate the gas limit for the withdrawal transaction
+        const gasPriceGwei = ethers.formatUnits(gasPrice, "gwei");
         const withdrawalAmount = ethers.parseEther(balance);
         const gasLimit = await contract.withdraw.estimateGas(withdrawalAmount);
-        
-        // Calculate the total gas cost
         const gasCost = gasPrice * gasLimit;
-        
-        // Convert gasCost to Ether
         const gasCostEther = ethers.formatEther(gasCost);
+        const maxWithdraw = withdrawalAmount - gasCost;
         
-        // Calculate the maximum amount we can withdraw
-        const maxWithdraw = ethers.parseEther(balance).sub(gasCost);
-        
-        if (maxWithdraw.lte(0)) {
+        if (maxWithdraw <= 0n) {
           setWithdrawalStatus('error');
           throw new Error("Insufficient balance to cover gas costs");
         }
         
-        // Ask for user confirmation
         const confirmWithdraw = window.confirm(
+          `Current gas price: ${parseFloat(gasPriceGwei).toFixed(2)} Gwei\n` +
           `Estimated gas cost: ${parseFloat(gasCostEther).toFixed(6)} ETH\n` +
           `You will receive approximately: ${ethers.formatEther(maxWithdraw)} ETH\n` +
           `Do you want to proceed with the withdrawal?`
@@ -405,8 +626,10 @@ const MinesGame = () => {
           return;
         }
         
-        // Withdraw the maximum possible amount
-        const tx = await contract.withdraw(maxWithdraw);
+        const tx = await contract.withdraw(maxWithdraw, {
+          gasLimit: gasLimit,
+          gasPrice: gasPrice
+        });
         await tx.wait();
         
         console.log("Full balance withdrawal successful");
@@ -420,30 +643,33 @@ const MinesGame = () => {
   };
 
   const handleBetCashout = async () => {
-    if (!gameStarted) {
+    if (gameStatus === 'idle') {
       if (betAmount > 0 && betAmount <= parseFloat(balance)) {
         try {
           const tx = await contract.startGame(ethers.parseEther(betAmount.toString()), mines, gems, gameStateHash);
           await tx.wait();
+          setGameStatus('playing');
           setGameStarted(true);
           await updateBalance();
         } catch (error) {
           if (error.reason === "Game already in progress") {
             console.log("Game already in progress. Continuing the existing game.");
+            setGameStatus('playing');
             setGameStarted(true);
-            await checkGameInProgress(); // Load the existing game state
+            await checkGameInProgress();
           } else {
             console.error("Error starting game:", error);
           }
         }
       }
-    } else {
+    } else if (gameStatus === 'playing') {
       try {
-        const multiplier = Math.floor(currentMultiplier * 100); // Convert to integer for contract
-        const tx = await contract.endGame(revealedGems, multiplier, gameStateHash);
+        const winMultiplier = Math.floor(currentMultiplier * 100);
+        const tx = await contract.endGame(revealedGems, winMultiplier, gameStateHash);
         await tx.wait();
+        setGameStatus('idle');
         setGameStarted(false);
-        initializeGame(); // Reset the game state
+        initializeGame();
         await updateBalance();
       } catch (error) {
         console.error("Error ending game:", error);
@@ -478,12 +704,19 @@ const MinesGame = () => {
                 : 'bg-gray-600 hover:bg-gray-500'
             }`}
             onClick={() => handleTileClick(x, y)}
-            disabled={!gameStarted}
+            disabled={gameStatus !== 'playing'}
           >
-            {revealed[y][x] && !isMine && (
-              <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#4CAF50" stroke="#45A045" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+            {revealed[y][x] && (
+              isMine ? (
+                <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" fill="#FF0000" />
+                  <path d="M8 8L16 16M8 16L16 8" stroke="#FFFFFF" strokeWidth="2" />
+                </svg>
+              ) : (
+                <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#4CAF50" stroke="#45A045" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )
             )}
           </button>
         ))}
