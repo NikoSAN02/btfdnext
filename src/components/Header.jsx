@@ -45,7 +45,13 @@ export default function Header() {
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
           <div className="hidden lg:block">
-            <ConnectButton client={client} />
+            <ConnectButton connectButton={{
+              
+              style: {
+                borderRadius: "10px",
+               
+              },
+            }} client={client} />
           </div>
         </div>
 

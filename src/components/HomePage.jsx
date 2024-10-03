@@ -44,16 +44,14 @@ Join our campaign and win BIG - https://soquest.xyz/space/btfd</div>
     </div>
     <div className=" h-full	w-full flex items-center justify-center">
     <Image
-    className='h-screen w-screen'
+    className='sm:h-screen sm:w-screen'
     src='/images/3bppl about usv6 1.png'
     alt=''
     height={2000}
     width={2000}
     />
     </div>
-    <div className='h-screen w-full flex items-center justify-center'>
-      <FAQAccordion/>
-    </div>
+   
     <div className='p-5'>
       <Footer/>
     </div>
