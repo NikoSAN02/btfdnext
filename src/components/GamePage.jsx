@@ -7,7 +7,7 @@ const GamesPage = () => {
   const [showMinesGame, setShowMinesGame] = useState(false);
 
   return (
-    <div className="bg-gradient-to-b from-purple-900 to-purple-700 min-h-screen text-white p-8">
+    <div className="bg-gradient-to-b from-[#26073B] to-[#000000] min-h-screen text-white p-8">
       <h1 className="text-6xl font-bold text-center mb-12">Games</h1>
       
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
