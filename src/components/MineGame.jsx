@@ -608,7 +608,7 @@ const MinesGame = () => {
         </button>
         <button
           onClick={handleBetCashout}
-          className={`w-full ${gameStarted ? 'bg-green-500' : 'bg-blue-500'} text-white p-2 rounded mb-4`}
+          className={`w-2/4 ${gameStarted ? 'bg-gradient-to-r cursor-pointer from-[#7831DA] to-[#FF1AF0]' : 'bg-[#2E262D]'}  text-white p-2 rounded-[19px] mb-4 hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200`}
           disabled={!gameStarted && betAmount > parseFloat(balance)}
         >
           {gameStarted ? 'Cashout' : 'Bet'}
