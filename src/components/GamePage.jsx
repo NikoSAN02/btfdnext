@@ -39,7 +39,7 @@ export default function GamesPage() {
               variant="ghost"
               onClick={() => setShowMinesGame(false)}
             >
-              <X className="h-6 w-6" />
+              {/* <X className="h-6 w-6" /> */}
               <span className="sr-only">Close</span>
             </button>
             <MinesGame />
