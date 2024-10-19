@@ -17,9 +17,7 @@ export default function Header() {
   const navItems = [
     { href: '/', label: 'Home' },
     { href: '/games', label: 'Games' },
-    { href: '/staking', label: 'Staking' },
-    { href: '/buy-sell', label: 'Buy/Sell' },
-    { href: '/team', label: 'Team' },
+    { href: '', label: 'Coming Soon...' },
   ]
 
   return (

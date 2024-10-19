@@ -728,8 +728,8 @@ const MinesGame = () => {
 
   return (
     <>
-    <div className="flex bg-white/20 pt-5 pl-7 pr-7 text-white w-full justify-between  h-auto ">
-      <div className="w-[450px] bg-[#120916] p-5 pt-7 pb-7  flex rounded-[20px] flex-col justify-center">
+    <div className="flex bg-white/20 pt-5 pl-7 pr-7 text-white w-full justify-center  h-auto ">
+      <div className="w-[450px] bg-[#120916] p-7 pt-7 pb-7  flex rounded-l-[40px] flex-col justify-center">
         <div className="mb-4">
           <label className="block mb-2">Balance</label>
           <div className='flex gap-2 justify-between'>
@@ -872,7 +872,7 @@ const MinesGame = () => {
         </button>
         </div>
       </div>
-      <div className="relative bg-[#250a24] w-2/3 flex items-center justify-center bg-[url('/images/bgFor btfd2 1.png')] bg-cover bg-center ">
+      <div className="relative bg-[#120916] rounded-r-[40px] w-2/3 flex items-center justify-center bg-[url('/images/bgFor btfd2 1.png')] bg-cover bg-center ">
       <div className='absolute bottom-0 left-20 z-10'>
         <Image
         src='/images/memenoi 1.png'
@@ -889,12 +889,12 @@ const MinesGame = () => {
         width={500}
         />
       </div>
-      <div className='absolute opacity-45'>
+      <div className='absolute opacity-35'>
         <Image
-        src='/images/bgFor_btfd.png'
+        src='/images/bgFor_btfd2_1.png'
         alt=''
         height={1500}
-        width={900}
+        width={1500}
         />
       </div>
         <div className="flex flex-col items-center z-20">

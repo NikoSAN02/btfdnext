@@ -1,10 +1,15 @@
 "use client"
-import React, { useState } from 'react';
-import Image from 'next/image';
-import MinesGame from './MineGame'; // Make sure this path is correct
 
-const GamesPage = () => {
-  const [showMinesGame, setShowMinesGame] = useState(false);
+import React, { useState } from 'react'
+import Image from 'next/image'
+import MinesGame from './MineGame' // Make sure this path is correct
+import { X } from 'lucide-react'
+
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
+export default function GamesPage() {
+  const [showMinesGame, setShowMinesGame] = useState(false)
 
   return (
     <div className="bg-gradient-to-b from-[#26073B] to-[#000000] min-h-screen text-white p-8">
@@ -17,22 +22,30 @@ const GamesPage = () => {
             <h2 className="text-2xl font-bold mb-2">Mines</h2>
             <p className="text-gray-300 mb-4">Play the exciting Mines game and test your luck!</p>
             <button 
-              onClick={() => setShowMinesGame(!showMinesGame)}
+              onClick={() => setShowMinesGame(true)}
               className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded"
             >
-              {showMinesGame ? 'Hide Game' : 'Play Now'}
+              Play Now
             </button>
           </div>
         </div>
       </div>
 
-      {showMinesGame && (
-        <div className="mt-12">
-          <MinesGame />
-        </div>
-      )}
+      <Dialog open={showMinesGame} onOpenChange={setShowMinesGame}>
+        <DialogContent className="max-w-full max-h-full w-full h-full p-0">
+          <div className="relative w-full h-full">
+            <button
+              className="absolute right-4 top-4 z-10"
+              variant="ghost"
+              onClick={() => setShowMinesGame(false)}
+            >
+              <X className="h-6 w-6" />
+              <span className="sr-only">Close</span>
+            </button>
+            <MinesGame />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
-  );
-};
-
-export default GamesPage;
+  )
+}
