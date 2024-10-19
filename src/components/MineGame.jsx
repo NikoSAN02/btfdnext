@@ -363,62 +363,7 @@ const MinesGame = () => {
     return provider.getGasPrice();
   };
 
-  const handleCashOutAll = async () => {
-    if (contract && signer && parseFloat(balance) > 0) {
-      try {
-        setWithdrawalStatus('pending');
-        
-        // Get the current gas price
-        const gasPrice = await signer.provider.getGasPrice();
-
-        if (!gasPrice) {
-          throw new Error("Unable to estimate gas price");
-        }
-        
-        // Estimate the gas limit for the withdrawal transaction
-        const withdrawalAmount = ethers.parseEther(balance);
-        const gasLimit = await contract.withdraw.estimateGas(withdrawalAmount);
-        
-        // Calculate the total gas cost
-        const gasCost = gasPrice * gasLimit;
-        
-        // Convert gasCost to Ether
-        const gasCostEther = ethers.formatEther(gasCost);
-        
-        // Calculate the maximum amount we can withdraw
-        const maxWithdraw = ethers.parseEther(balance).sub(gasCost);
-        
-        if (maxWithdraw.lte(0)) {
-          setWithdrawalStatus('error');
-          throw new Error("Insufficient balance to cover gas costs");
-        }
-        
-        // Ask for user confirmation
-        const confirmWithdraw = window.confirm(
-          `Estimated gas cost: ${parseFloat(gasCostEther).toFixed(6)} ETH\n` +
-          `You will receive approximately: ${ethers.formatEther(maxWithdraw)} ETH\n` +
-          `Do you want to proceed with the withdrawal?`
-        );
-        
-        if (!confirmWithdraw) {
-          setWithdrawalStatus(null);
-          return;
-        }
-        
-        // Withdraw the maximum possible amount
-        const tx = await contract.withdraw(maxWithdraw);
-        await tx.wait();
-        
-        console.log("Full balance withdrawal successful");
-        await updateBalance();
-        setWithdrawalStatus('success');
-      } catch (error) {
-        console.error("Error withdrawing full balance:", error);
-        setWithdrawalStatus('error');
-      }
-    }
-  };
-
+ 
   const handleBetCashout = async () => {
     if (!gameStarted) {
       if (betAmount > 0 && betAmount <= parseFloat(balance)) {
