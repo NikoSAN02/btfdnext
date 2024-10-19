@@ -16,7 +16,7 @@ export default function GamesPage() {
       <h1 className="text-6xl font-bold text-center mb-12">Games</h1>
       
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
+        <div className="bg-[#121212] rounded-lg overflow-hidden shadow-lg">
           <Image src="/images/mines-game.png" alt="Mines Game" width={400} height={300} className="w-full h-48 object-cover" />
           <div className="p-6">
             <h2 className="text-2xl font-bold mb-2">Mines</h2>
