@@ -372,7 +372,7 @@ const contractABI = [
   }
 ];
 
-const contractAddress = "0x52E16064d986C23aB3aDA469621a08606412D803";
+const contractAddress = "0xEF47E97EeCC3534EF5F6a0889D1b6b123963CC8F";
 
 const MinesGame = () => {
   const [size] = useState(5);
