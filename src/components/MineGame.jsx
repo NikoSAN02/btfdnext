@@ -384,7 +384,7 @@ const contractABI = [
   }
 ];
 
-const contractAddress = "0x52E16064d986C23aB3aDA469621a08606412D803";
+const contractAddress = "0xEF47E97EeCC3534EF5F6a0889D1b6b123963CC8F";
 
 const MinesGame = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -608,28 +608,87 @@ const MinesGame = () => {
   };
 
   const handleCashOutAll = async () => {
+    console.log("Contract initialized:", !!contract);
+    console.log("Signer initialized:", !!signer);
+    console.log("Current balance:", balance);
+    console.log("Parsed balance:", parseFloat(balance));
+  
     if (contract && signer && parseFloat(balance) > 0) {
       try {
         setWithdrawalStatus('pending');
-        const gasPrice = await signer.provider.getGasPrice();
-        if (!gasPrice) {
-          throw new Error("Unable to estimate gas price");
+        
+        const provider = signer.provider;
+        
+        // Get gas price
+        let gasPrice;
+        try {
+          gasPrice = await provider.getGasPrice();
+        } catch (gasError) {
+          console.warn("Unable to get gas price from provider, using fallback methods");
+          try {
+            const feeData = await provider.getFeeData();
+            gasPrice = feeData.gasPrice;
+          } catch (feeDataError) {
+            console.warn("Unable to get fee data, using getBlock method");
+            const block = await provider.getBlock('latest');
+            gasPrice = block.baseFeePerGas;
+          }
         }
-        const gasPriceGwei = ethers.formatUnits(gasPrice, "gwei");
+  
+        if (!gasPrice) {
+          console.warn("Unable to estimate gas price, using hardcoded fallback");
+          gasPrice = ethers.parseUnits("20", "gwei"); // Fallback to 20 Gwei
+        }
+  
+        console.log("Estimated gas price:", ethers.formatUnits(gasPrice, "gwei"), "Gwei");
+  
         const withdrawalAmount = ethers.parseEther(balance);
-        const gasLimit = await contract.withdraw.estimateGas(withdrawalAmount);
+        
+        // Check player balance in the contract
+        const playerAddress = await signer.getAddress();
+        const playerBalance = await contract.playerBalances(playerAddress);
+        console.log("Player balance in contract:", playerBalance.toString());
+  
+        if (typeof playerBalance === 'bigint' || playerBalance instanceof ethers.BigNumber) {
+          if (playerBalance < withdrawalAmount) {
+            throw new Error("Insufficient balance in the contract");
+          }
+        } else {
+          // If playerBalance is not a BigNumber, convert both to numbers for comparison
+          if (Number(playerBalance) < Number(withdrawalAmount)) {
+            throw new Error("Insufficient balance in the contract");
+          }
+        }
+  
+        // Estimate gas limit with a buffer
+        let gasLimit;
+        try {
+          gasLimit = await contract.withdraw.estimateGas(withdrawalAmount);
+          console.log("Estimated gas limit:", gasLimit.toString());
+          // Add a 20% buffer to the gas limit
+          gasLimit = gasLimit * BigInt(120) / BigInt(100);
+          console.log("Adjusted gas limit with buffer:", gasLimit.toString());
+        } catch (gasEstimateError) {
+          console.error("Error estimating gas:", gasEstimateError);
+          // If gas estimation fails, use a high default value
+          gasLimit = BigInt(300000); // Adjusted down from previous value
+          console.log("Using default gas limit:", gasLimit.toString());
+        }
+  
         const gasCost = gasPrice * gasLimit;
         const gasCostEther = ethers.formatEther(gasCost);
-        const maxWithdraw = withdrawalAmount - gasCost;
+        const safetyMargin = ethers.parseEther("0.0001");
+        const maxWithdraw = withdrawalAmount - gasCost - safetyMargin;
         
-        if (maxWithdraw <= 0n) {
-          setWithdrawalStatus('error');
-          throw new Error("Insufficient balance to cover gas costs");
+        const MIN_WITHDRAWAL = ethers.parseEther("0.0001");
+        if (maxWithdraw < MIN_WITHDRAWAL) {
+          throw new Error("Withdrawal amount too small or insufficient balance to cover gas costs");
         }
         
         const confirmWithdraw = window.confirm(
-          `Current gas price: ${parseFloat(gasPriceGwei).toFixed(2)} Gwei\n` +
-          `Estimated gas cost: ${parseFloat(gasCostEther).toFixed(6)} ETH\n` +
+          `Current gas price: ${ethers.formatUnits(gasPrice, "gwei")} Gwei\n` +
+          `Estimated gas limit: ${gasLimit.toString()}\n` +
+          `Estimated gas cost: ${gasCostEther} ETH\n` +
           `You will receive approximately: ${ethers.formatEther(maxWithdraw)} ETH\n` +
           `Do you want to proceed with the withdrawal?`
         );
@@ -639,19 +698,40 @@ const MinesGame = () => {
           return;
         }
         
-        const tx = await contract.withdraw(maxWithdraw, {
+        console.log("Sending transaction with parameters:", {
+          gasLimit: gasLimit.toString(),
+          gasPrice: gasPrice.toString(),
+          withdrawAmount: ethers.formatEther(withdrawalAmount)
+        });
+  
+        // Call the withdraw function with the withdrawal amount
+        const tx = await contract.withdraw(withdrawalAmount, {
           gasLimit: gasLimit,
           gasPrice: gasPrice
         });
-        await tx.wait();
+  
+        console.log("Transaction sent:", tx.hash);
+        const receipt = await tx.wait();
         
+        if (receipt.status === 0) {
+          throw new Error("Transaction failed. The contract reverted the transaction.");
+        }
+  
         console.log("Full balance withdrawal successful");
         await updateBalance();
         setWithdrawalStatus('success');
       } catch (error) {
         console.error("Error withdrawing full balance:", error);
+        console.error("Error details:", error.message);
+        if (error.data) {
+          console.error("Error data:", error.data);
+        }
         setWithdrawalStatus('error');
+        alert(`Withdrawal failed: ${error.message}`);
       }
+    } else {
+      console.error("Unable to process withdrawal: contract, signer, or balance not available");
+      setWithdrawalStatus('error');
     }
   };
 
