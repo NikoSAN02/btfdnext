@@ -1,378 +1,736 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import Image from 'next/image';
+import MineGameJSON from './contract/MineGame.json';
+
 // ABI and contract address would be imported from separate files in a real project
 // Correct ABI from the provided JSON
 const contractABI = [
-  {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnableInvalidOwner",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
-    ],
-    "name": "OwnableUnauthorizedAccount",
-    "type": "error"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "player",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "winAmount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "gameStateHash",
-        "type": "bytes32"
-      }
-    ],
-    "name": "GameEnded",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "player",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "betAmount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "mines",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "gems",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "gameStateHash",
-        "type": "bytes32"
-      }
-    ],
-    "name": "GameStarted",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "previousOwner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnershipTransferred",
-    "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "MAX_BET",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "MIN_BET",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "deposit",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "revealedGems",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "multiplier",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "gameStateHash",
-        "type": "bytes32"
-      }
-    ],
-    "name": "endGame",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "games",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "player",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "betAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "mines",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "gems",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "gameStateHash",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bool",
-        "name": "isActive",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "player",
-        "type": "address"
-      }
-    ],
-    "name": "getBalance",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "player",
-        "type": "address"
-      }
-    ],
-    "name": "getGameState",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "isActive",
-        "type": "bool"
-      },
-      {
-        "internalType": "uint256",
-        "name": "betAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "mines",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "gems",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "gameStateHash",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "owner",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "ownerWithdraw",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "playerBalances",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "renounceOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "betAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "mines",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "gems",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "gameStateHash",
-        "type": "bytes32"
-      }
-    ],
-    "name": "startGame",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "transferOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdraw",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
+   {
+      "inputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
+      "type":"constructor"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"ECDSAInvalidSignature",
+      "type":"error"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"uint256",
+            "name":"length",
+            "type":"uint256"
+         }
+      ],
+      "name":"ECDSAInvalidSignatureLength",
+      "type":"error"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"bytes32",
+            "name":"s",
+            "type":"bytes32"
+         }
+      ],
+      "name":"ECDSAInvalidSignatureS",
+      "type":"error"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"FailedCall",
+      "type":"error"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"uint256",
+            "name":"balance",
+            "type":"uint256"
+         },
+         {
+            "internalType":"uint256",
+            "name":"needed",
+            "type":"uint256"
+         }
+      ],
+      "name":"InsufficientBalance",
+      "type":"error"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"address",
+            "name":"owner",
+            "type":"address"
+         }
+      ],
+      "name":"OwnableInvalidOwner",
+      "type":"error"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"address",
+            "name":"account",
+            "type":"address"
+         }
+      ],
+      "name":"OwnableUnauthorizedAccount",
+      "type":"error"
+   },
+   {
+      "anonymous":false,
+      "inputs":[
+         {
+            "indexed":true,
+            "internalType":"address",
+            "name":"player",
+            "type":"address"
+         },
+         {
+            "indexed":false,
+            "internalType":"uint256",
+            "name":"amount",
+            "type":"uint256"
+         }
+      ],
+      "name":"Deposit",
+      "type":"event"
+   },
+   {
+      "anonymous":false,
+      "inputs":[
+         {
+            "indexed":true,
+            "internalType":"address",
+            "name":"player",
+            "type":"address"
+         },
+         {
+            "indexed":false,
+            "internalType":"uint256",
+            "name":"validUntil",
+            "type":"uint256"
+         }
+      ],
+      "name":"GameAuthorizationSet",
+      "type":"event"
+   },
+   {
+      "anonymous":false,
+      "inputs":[
+         {
+            "indexed":true,
+            "internalType":"address",
+            "name":"player",
+            "type":"address"
+         },
+         {
+            "indexed":false,
+            "internalType":"uint256",
+            "name":"winAmount",
+            "type":"uint256"
+         },
+         {
+            "indexed":false,
+            "internalType":"bytes32",
+            "name":"gameStateHash",
+            "type":"bytes32"
+         }
+      ],
+      "name":"GameEnded",
+      "type":"event"
+   },
+   {
+      "anonymous":false,
+      "inputs":[
+         {
+            "indexed":true,
+            "internalType":"address",
+            "name":"player",
+            "type":"address"
+         },
+         {
+            "indexed":false,
+            "internalType":"uint256",
+            "name":"betAmount",
+            "type":"uint256"
+         },
+         {
+            "indexed":false,
+            "internalType":"uint256",
+            "name":"mines",
+            "type":"uint256"
+         },
+         {
+            "indexed":false,
+            "internalType":"uint256",
+            "name":"gems",
+            "type":"uint256"
+         },
+         {
+            "indexed":false,
+            "internalType":"bytes32",
+            "name":"gameStateHash",
+            "type":"bytes32"
+         }
+      ],
+      "name":"GameStarted",
+      "type":"event"
+   },
+   {
+      "anonymous":false,
+      "inputs":[
+         {
+            "indexed":true,
+            "internalType":"address",
+            "name":"player",
+            "type":"address"
+         },
+         {
+            "indexed":false,
+            "internalType":"uint256",
+            "name":"amount",
+            "type":"uint256"
+         }
+      ],
+      "name":"LargeWithdrawalRequested",
+      "type":"event"
+   },
+   {
+      "anonymous":false,
+      "inputs":[
+         {
+            "indexed":true,
+            "internalType":"address",
+            "name":"previousOwner",
+            "type":"address"
+         },
+         {
+            "indexed":true,
+            "internalType":"address",
+            "name":"newOwner",
+            "type":"address"
+         }
+      ],
+      "name":"OwnershipTransferred",
+      "type":"event"
+   },
+   {
+      "anonymous":false,
+      "inputs":[
+         {
+            "indexed":false,
+            "internalType":"address",
+            "name":"account",
+            "type":"address"
+         }
+      ],
+      "name":"Paused",
+      "type":"event"
+   },
+   {
+      "anonymous":false,
+      "inputs":[
+         {
+            "indexed":false,
+            "internalType":"address",
+            "name":"account",
+            "type":"address"
+         }
+      ],
+      "name":"Unpaused",
+      "type":"event"
+   },
+   {
+      "anonymous":false,
+      "inputs":[
+         {
+            "indexed":true,
+            "internalType":"address",
+            "name":"player",
+            "type":"address"
+         },
+         {
+            "indexed":false,
+            "internalType":"uint256",
+            "name":"amount",
+            "type":"uint256"
+         }
+      ],
+      "name":"Withdrawal",
+      "type":"event"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"LARGE_WITHDRAWAL_DELAY",
+      "outputs":[
+         {
+            "internalType":"uint256",
+            "name":"",
+            "type":"uint256"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"MAX_BET",
+      "outputs":[
+         {
+            "internalType":"uint256",
+            "name":"",
+            "type":"uint256"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"MAX_MULTIPLIER",
+      "outputs":[
+         {
+            "internalType":"uint256",
+            "name":"",
+            "type":"uint256"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"MAX_TOTAL_BALANCE",
+      "outputs":[
+         {
+            "internalType":"uint256",
+            "name":"",
+            "type":"uint256"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"MIN_BET",
+      "outputs":[
+         {
+            "internalType":"uint256",
+            "name":"",
+            "type":"uint256"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"completeLargeWithdrawal",
+      "outputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"bytes",
+            "name":"signature",
+            "type":"bytes"
+         }
+      ],
+      "name":"deposit",
+      "outputs":[
+         
+      ],
+      "stateMutability":"payable",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"address",
+            "name":"",
+            "type":"address"
+         }
+      ],
+      "name":"gameAuthorizations",
+      "outputs":[
+         {
+            "internalType":"bytes",
+            "name":"signature",
+            "type":"bytes"
+         },
+         {
+            "internalType":"uint256",
+            "name":"signedAt",
+            "type":"uint256"
+         },
+         {
+            "internalType":"bool",
+            "name":"isValid",
+            "type":"bool"
+         },
+         {
+            "internalType":"uint256",
+            "name":"validUntil",
+            "type":"uint256"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"address",
+            "name":"",
+            "type":"address"
+         }
+      ],
+      "name":"games",
+      "outputs":[
+         {
+            "internalType":"address",
+            "name":"player",
+            "type":"address"
+         },
+         {
+            "internalType":"uint256",
+            "name":"betAmount",
+            "type":"uint256"
+         },
+         {
+            "internalType":"uint256",
+            "name":"mines",
+            "type":"uint256"
+         },
+         {
+            "internalType":"uint256",
+            "name":"gems",
+            "type":"uint256"
+         },
+         {
+            "internalType":"bytes32",
+            "name":"gameStateHash",
+            "type":"bytes32"
+         },
+         {
+            "internalType":"bool",
+            "name":"isActive",
+            "type":"bool"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"address",
+            "name":"player",
+            "type":"address"
+         }
+      ],
+      "name":"getBalance",
+      "outputs":[
+         {
+            "internalType":"uint256",
+            "name":"",
+            "type":"uint256"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"address",
+            "name":"player",
+            "type":"address"
+         }
+      ],
+      "name":"getGameState",
+      "outputs":[
+         {
+            "internalType":"bool",
+            "name":"isActive",
+            "type":"bool"
+         },
+         {
+            "internalType":"uint256",
+            "name":"betAmount",
+            "type":"uint256"
+         },
+         {
+            "internalType":"uint256",
+            "name":"mines",
+            "type":"uint256"
+         },
+         {
+            "internalType":"uint256",
+            "name":"gems",
+            "type":"uint256"
+         },
+         {
+            "internalType":"bytes32",
+            "name":"gameStateHash",
+            "type":"bytes32"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"address",
+            "name":"",
+            "type":"address"
+         }
+      ],
+      "name":"largeWithdrawals",
+      "outputs":[
+         {
+            "internalType":"uint256",
+            "name":"amount",
+            "type":"uint256"
+         },
+         {
+            "internalType":"uint256",
+            "name":"requestTime",
+            "type":"uint256"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"owner",
+      "outputs":[
+         {
+            "internalType":"address",
+            "name":"",
+            "type":"address"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"uint256",
+            "name":"amount",
+            "type":"uint256"
+         }
+      ],
+      "name":"ownerWithdraw",
+      "outputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"pause",
+      "outputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"paused",
+      "outputs":[
+         {
+            "internalType":"bool",
+            "name":"",
+            "type":"bool"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"address",
+            "name":"",
+            "type":"address"
+         }
+      ],
+      "name":"playerBalances",
+      "outputs":[
+         {
+            "internalType":"uint256",
+            "name":"",
+            "type":"uint256"
+         }
+      ],
+      "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"uint256",
+            "name":"revealedGems",
+            "type":"uint256"
+         },
+         {
+            "internalType":"uint256",
+            "name":"multiplier",
+            "type":"uint256"
+         }
+      ],
+      "name":"processGameOutcome",
+      "outputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"renounceOwnership",
+      "outputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"uint256",
+            "name":"newMinBet",
+            "type":"uint256"
+         },
+         {
+            "internalType":"uint256",
+            "name":"newMaxBet",
+            "type":"uint256"
+         }
+      ],
+      "name":"setBetLimits",
+      "outputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"uint256",
+            "name":"betAmount",
+            "type":"uint256"
+         },
+         {
+            "internalType":"uint256",
+            "name":"mines",
+            "type":"uint256"
+         },
+         {
+            "internalType":"uint256",
+            "name":"gems",
+            "type":"uint256"
+         },
+         {
+            "internalType":"bytes32",
+            "name":"gameStateHash",
+            "type":"bytes32"
+         }
+      ],
+      "name":"startGame",
+      "outputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"address",
+            "name":"newOwner",
+            "type":"address"
+         }
+      ],
+      "name":"transferOwnership",
+      "outputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"unpause",
+      "outputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         {
+            "internalType":"uint256",
+            "name":"amount",
+            "type":"uint256"
+         }
+      ],
+      "name":"withdraw",
+      "outputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
+      "type":"function"
+   }
 ];
 
-const contractAddress = "0x52E16064d986C23aB3aDA469621a08606412D803";
+const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ;
 
 const MinesGame = () => {
   const [size] = useState(5);
@@ -394,12 +752,30 @@ const MinesGame = () => {
   const [withdrawalStatus, setWithdrawalStatus] = useState(null);
   const [gameStatus, setGameStatus] = useState('idle'); // Can be 'idle', 'playing', 'won', or 'lost'
 
+  const [gameSignature, setGameSignature] = useState(null);
+  const [processingTransaction, setProcessingTransaction] = useState(false);
+  const [needsSignature, setNeedsSignature] = useState(false);
+
+
+  const checkOwnerAndPauseStatus = async () => {
+    if (!contract || !signer) return;
+    
+    try {
+      const address = await signer.getAddress();
+      const contractOwner = await contract.owner();
+      setIsOwner(address.toLowerCase() === contractOwner.toLowerCase());
+    } catch (error) {
+      console.error("Error checking owner status:", error);
+    }
+  };
+
   useEffect(() => {
     initializeEthers();
   }, []);
 
   useEffect(() => {
     if (contract && signer) {
+      checkGameAuthorization();
       checkGameInProgress();
       updateBalance();
     }
@@ -408,6 +784,89 @@ const MinesGame = () => {
   useEffect(() => {
     initializeGame();
   }, [size, mines]);
+
+  const togglePause = async () => {
+    if (!contract || !signer || !isOwner) return;
+    
+    try {
+      const tx = isPaused 
+        ? await contract.unpause()
+        : await contract.pause();
+      
+      await tx.wait();
+      setIsPaused(!isPaused);
+      console.log(isPaused ? "Contract unpaused" : "Contract paused");
+    } catch (error) {
+      console.error("Error toggling pause state:", error);
+    }
+  };
+
+  const SignatureRequest = () => {
+   if (needsSignature) {
+       return (
+           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+               <div className="bg-white p-4 rounded text-black">
+                   <p>Please authorize game actions</p>
+                   <button 
+                       onClick={handleDeposit} 
+                       className="mt-4 bg-[#2E262D] text-white px-4 py-2 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+                   >
+                       Sign
+                   </button>
+               </div>
+           </div>
+       );
+   }
+   return null;
+};
+
+  // Function to get authorization signature without deposit
+const getGameAuthorization = async () => {
+   if (!contract || !signer) return null;
+   
+   try {
+       const address = await signer.getAddress();
+       const chainId = await signer.provider.getNetwork().then(n => n.chainId);
+       const timestamp = Math.floor(Date.now() / 1000);
+       
+       // Create the message hash
+       const messageData = ethers.AbiCoder.defaultAbiCoder().encode(
+           ['string', 'address', 'uint256', 'uint256'],
+           ['AUTHORIZE_MINES_GAME', address, chainId, timestamp]
+       );
+       
+       const innerHash = ethers.keccak256(messageData);
+       const signature = await signer.signMessage(ethers.getBytes(innerHash));
+       
+       // Store signature in sessionStorage instead of localStorage for better security
+       sessionStorage.setItem('gameSignature', signature);
+       setGameSignature(signature);
+       setNeedsSignature(false);
+       
+       return signature;
+   } catch (error) {
+       console.error("Error getting game authorization:", error);
+       return null;
+   }
+};
+
+const checkGameState = async () => {
+  try {
+      const address = await signer.getAddress();
+      const gameState = await contract.getGameState(address);
+      console.log("Current game state:", {
+          isActive: gameState.isActive,
+          betAmount: ethers.formatEther(gameState.betAmount),
+          mines: Number(gameState.mines),
+          gems: Number(gameState.gems),
+          gameStateHash: gameState.gameStateHash
+      });
+      return gameState;
+  } catch (error) {
+      console.error("Error checking game state:", error);
+      return null;
+  }
+};
 
   const initializeEthers = async () => {
     if (typeof window.ethereum !== 'undefined') {
@@ -427,22 +886,31 @@ const MinesGame = () => {
   };
 
   const checkGameInProgress = async () => {
-    try {
-      const address = await signer.getAddress();
-      const gameState = await contract.getGameState(address);
-      if (gameState.isActive) {
-        setGameStarted(true);
-        setGameStatus('playing');
-        setBetAmount(ethers.formatEther(gameState.betAmount));
-        setMines(Number(gameState.mines));
-        setGems(Number(gameState.gems));
-        setGameStateHash(gameState.gameStateHash);
-        console.log("Game in progress loaded");
-      }
-    } catch (error) {
-      console.error("Error checking game state:", error);
-    }
-  };
+   try {
+       const address = await signer.getAddress();
+       const gameState = await contract.getGameState(address);
+       
+       if (gameState.isActive) {
+           // Check for stored signature
+           const signature = sessionStorage.getItem('gameSignature');
+           if (!signature) {
+               setNeedsSignature(true);
+               return;
+           }
+
+           setGameStarted(true);
+           setGameStatus('playing');
+           setBetAmount(ethers.formatEther(gameState.betAmount));
+           setMines(Number(gameState.mines));
+           setGems(Number(gameState.gems));
+           setGameStateHash(gameState.gameStateHash);
+           setGameSignature(signature);
+           console.log("Game in progress restored");
+       }
+   } catch (error) {
+       console.error("Error checking game state:", error);
+   }
+};
 
   const updateBalance = async () => {
     if (contract && signer) {
@@ -457,74 +925,317 @@ const MinesGame = () => {
     }
   };
 
-  const initializeGame = () => {
-    const newBoard = Array(size).fill().map(() => Array(size).fill(false));
-    let placedMines = 0;
-    while (placedMines < mines) {
-      const x = Math.floor(Math.random() * size);
-      const y = Math.floor(Math.random() * size);
-      if (!newBoard[y][x]) {
-        newBoard[y][x] = true;
-        placedMines++;
-      }
-    }
-    setBoard(newBoard);
-    setRevealed(Array(size).fill().map(() => Array(size).fill(false)));
-    setGems(size * size - mines);
-    setCurrentMultiplier(1);
-    setPotentialWin(0);
-    setRevealedGems(0);
-    setGameStarted(false);
-    setGameStatus('idle');
-    
-    const gameStateHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(newBoard)));
-    setGameStateHash(gameStateHash);
-  };
-  const calculateMultiplier = (clickCount) => {
-    const totalTiles = size * size;
-    const safeTiles = totalTiles - mines;
-    const probability = (safeTiles - clickCount) / (totalTiles - clickCount);
-    const houseEdge = 0.98;
-    return (houseEdge / probability) * (1 + clickCount * 0.1);
-  };
+ // Update the initializeGame function
+ const initializeGame = () => {
+   const newBoard = Array(size).fill().map(() => Array(size).fill(false));
+   let placedMines = 0;
+   
+   while (placedMines < mines) {
+       const x = Math.floor(Math.random() * size);
+       const y = Math.floor(Math.random() * size);
+       if (!newBoard[y][x]) {
+           newBoard[y][x] = true;
+           placedMines++;
+       }
+   }
 
-  const handleLoss = async () => {
-    setGameStatus('lost');
-    setGameStarted(false);
-    setPotentialWin(0);
-    setCurrentMultiplier(0);
-    try {
-      const lossMultiplier = 0;
-      console.log("Ending game with loss. Revealed gems:", revealedGems, "Multiplier:", lossMultiplier, "Game state hash:", gameStateHash);
-      const tx = await contract.endGame(revealedGems, lossMultiplier, gameStateHash);
-      await tx.wait();
-      console.log("Game ended successfully");
-      await updateBalance();
-      // Reset game state after loss
-      setTimeout(() => {
-        initializeGame();
-        setGameStatus('idle');
-      }, 2000); // Delay to allow players to see the revealed mines
-    } catch (error) {
-      console.error("Error ending game:", error);
-      setWithdrawalStatus('error');
-    }
-  };
+   setBoard(newBoard);
+   setRevealed(Array(size).fill().map(() => Array(size).fill(false)));
+   setGems(size * size - mines);
+   setCurrentMultiplier(1);
+   setPotentialWin(0);
+   setRevealedGems(0);
+   setGameStarted(false);
+   setGameStatus('idle');
+   
+   const gameStateHash = getGameStateHash();
+   console.log("Game Initialized:", {
+       mines,
+       gems: size * size - mines,
+       gameStateHash,
+       board: newBoard.map(row => row.map(cell => cell ? '1' : '0').join('')).join('')
+   });
+   
+   setGameStateHash(gameStateHash);
+};
 
-  const handleDeposit = async () => {
-    if (contract && signer && depositAmount > 0) {
-      try {
-        const depositValue = ethers.parseEther(depositAmount.toString());
-        const tx = await contract.deposit({ value: depositValue });
-        await tx.wait();
-        console.log("Deposit successful");
-        await updateBalance();
-        setDepositAmount(0);
-      } catch (error) {
-        console.error("Error depositing:", error);
-      }
-    }
-  };
+
+
+// Add error boundary component
+const GameErrorBoundary = ({ children }) => {
+   const [hasError, setHasError] = useState(false);
+
+   if (hasError) {
+       return (
+           <div className="p-4 bg-red-100 text-red-700 rounded">
+               <h2>Something went wrong with the game.</h2>
+               <button 
+                   onClick={() => {
+                       setHasError(false);
+                       initializeGame();
+                   }}
+                   className="mt-2 bg-red-500 text-white px-4 py-2 rounded"
+               >
+                   Reset Game
+               </button>
+           </div>
+       );
+   }
+
+   return children;
+};
+
+const handleLoss = () => handleGameOutcome(false);
+
+const checkGameAuthorization = async () => {
+   if (!contract || !signer) return false;
+   
+   try {
+       const address = await signer.getAddress();
+       const auth = await contract.gameAuthorizations(address);
+       
+       if (auth.isValid && auth.validUntil * 1000n > BigInt(Date.now())) {
+           const signature = sessionStorage.getItem('gameSignature');
+           if (signature) {
+               setGameSignature(signature);
+               return true;
+           }
+           
+           setNeedsSignature(true);
+           return false;
+       }
+       return false;
+   } catch (error) {
+       console.error("Error checking authorization:", error);
+       return false;
+   }
+};
+
+const handleDeposit = async () => {
+   if (!contract || !signer || depositAmount <= 0) return;
+   
+   try {
+       setProcessingTransaction(true);
+       
+       // Get current address and chain ID
+       const address = await signer.getAddress();
+       const chainId = await signer.provider.getNetwork().then(n => n.chainId);
+       
+       // Create the message to sign - EXACTLY as in the contract
+       const messageToSign = ethers.solidityPacked(
+           ['address', 'uint256', 'string'],
+           [address, chainId, 'AUTHORIZE_DEPOSIT']
+       );
+       
+       // Hash the message
+       const messageHash = ethers.keccak256(messageToSign);
+       
+       // Sign the hash - this will automatically add the Ethereum Signed Message prefix
+       const signature = await signer.signMessage(ethers.getBytes(messageHash));
+       
+       // Log all the details for debugging
+       console.log('Signing Details:', {
+           address,
+           chainId: chainId.toString(),
+           messageToSign,
+           messageHash,
+           signature
+       });
+
+       // Verify the signature locally before sending
+       const recoveredAddress = ethers.verifyMessage(
+           ethers.getBytes(messageHash),
+           signature
+       );
+
+       console.log('Signature Verification:', {
+           originalSigner: address.toLowerCase(),
+           recoveredSigner: recoveredAddress.toLowerCase(),
+           matches: address.toLowerCase() === recoveredAddress.toLowerCase()
+       });
+
+       if (address.toLowerCase() !== recoveredAddress.toLowerCase()) {
+           throw new Error('Local signature verification failed');
+       }
+
+       // Store the signature
+       sessionStorage.setItem('gameSignature', signature);
+       setGameSignature(signature);
+
+       // Send the transaction
+       const tx = await contract.deposit(signature, {
+           value: ethers.parseEther(depositAmount.toString()),
+           gasLimit: 300000
+       });
+
+       console.log('Transaction sent:', tx.hash);
+
+       const receipt = await tx.wait();
+       console.log('Transaction receipt:', receipt);
+
+       await updateBalance();
+       setDepositAmount(0);
+       setNeedsSignature(false);
+
+   } catch (error) {
+       console.error('Deposit Error:', error);
+       
+       // Detailed error logging
+       if (error.transaction) {
+           console.error('Failed Transaction:', {
+               hash: error.transaction.hash,
+               from: error.transaction.from,
+               to: error.transaction.to,
+               data: error.transaction.data,
+               value: error.transaction.value
+           });
+       }
+       
+       if (error.receipt) {
+           console.error('Transaction Receipt:', error.receipt);
+       }
+
+       alert(`Deposit failed: ${error.message || 'Unknown error'}`);
+   } finally {
+       setProcessingTransaction(false);
+   }
+};
+
+// Add this helper function to verify signatures
+const verifySignatureLocally = async (signature) => {
+   const address = await signer.getAddress();
+   const chainId = await signer.provider.getNetwork().then(n => n.chainId);
+   
+   const messageToSign = ethers.solidityPacked(
+       ['address', 'uint256', 'string'],
+       [address, chainId, 'AUTHORIZE_DEPOSIT']
+   );
+   
+   const messageHash = ethers.keccak256(messageToSign);
+   const recoveredAddress = ethers.verifyMessage(ethers.getBytes(messageHash), signature);
+   
+   return {
+       isValid: address.toLowerCase() === recoveredAddress.toLowerCase(),
+       originalAddress: address,
+       recoveredAddress: recoveredAddress
+   };
+};
+
+// Optional: Add this test function to your component
+const testSignature = async () => {
+   if (!contract || !signer) {
+       console.error('Contract or signer not initialized');
+       return;
+   }
+
+   try {
+       const address = await signer.getAddress();
+       const chainId = await signer.provider.getNetwork().then(n => n.chainId);
+       
+       const messageToSign = ethers.solidityPacked(
+           ['address', 'uint256', 'string'],
+           [address, chainId, 'AUTHORIZE_DEPOSIT']
+       );
+       
+       const messageHash = ethers.keccak256(messageToSign);
+       const signature = await signer.signMessage(ethers.getBytes(messageHash));
+       
+       const verification = await verifySignatureLocally(signature);
+       
+       console.log('Signature Test Results:', {
+           messageToSign,
+           messageHash,
+           signature,
+           verification
+       });
+       
+       return verification;
+   } catch (error) {
+       console.error('Signature Test Error:', error);
+       return null;
+   }
+};
+
+const verifySignature = async (signature) => {
+   if (!contract || !signer) return;
+   
+   try {
+       const address = await signer.getAddress();
+       const chainId = await signer.provider.getNetwork().then(n => n.chainId);
+       const timestamp = Math.floor(Date.now() / 1000);
+       
+       const messageData = ethers.solidityPacked(
+           ['string', 'address', 'uint256', 'uint256'],
+           ['AUTHORIZE_MINES_GAME', address, chainId, timestamp]
+       );
+       
+       const messageHash = ethers.keccak256(messageData);
+       const recoveredAddress = ethers.verifyMessage(ethers.getBytes(messageHash), signature);
+       
+       console.log("Signature verification:", {
+           originalSigner: address,
+           recoveredSigner: recoveredAddress,
+           matches: address.toLowerCase() === recoveredAddress.toLowerCase()
+       });
+       
+       return address.toLowerCase() === recoveredAddress.toLowerCase();
+   } catch (error) {
+       console.error("Error verifying signature:", error);
+       return false;
+   }
+};
+
+const SignaturePrompt = () => {
+   if (needsSignature) {
+       return (
+           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+               <div className="bg-white p-4 rounded text-black">
+                   <p>Please sign to continue your game</p>
+                   <button 
+                       onClick={getGameAuthorization}
+                       className="mt-4 bg-[#2E262D] text-white px-4 py-2 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+                   >
+                       Sign
+                   </button>
+               </div>
+           </div>
+       );
+   }
+   return null;
+};
+
+// Add to your useEffect cleanup
+useEffect(() => {
+   return () => {
+       // Clear signature on unmount
+       sessionStorage.removeItem('gameSignature');
+   };
+}, []);
+
+useEffect(() => {
+  if (contract) {
+      // Log contract interface info
+      console.log("Contract interface:", {
+          deposit: contract.interface.getFunction('deposit'),
+          abi: contract.interface.format()
+      });
+  }
+}, [contract]);
+
+
+const showTransactionStatus = () => {
+  if (processingTransaction || gameStatus === 'processing') {
+      return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-4 rounded text-black flex flex-col items-center">
+                  <div className="mb-2">Processing transaction...</div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              </div>
+          </div>
+      );
+  }
+  return null;
+};
 
   const handleWithdraw = async () => {
     if (contract && signer && withdrawAmount > 0) {
@@ -544,55 +1255,58 @@ const MinesGame = () => {
     }
   };
 
-  const handleTileClick = (x, y) => {
-    if (gameStatus !== 'playing') return;
-  
-    const newRevealed = [...revealed];
-    newRevealed[y][x] = true;
-    setRevealed(newRevealed);
-  
-    if (board[y][x]) {
-      // Hit a mine
-      setGameStatus('lost');
-      // Reveal all mines
-      const allRevealed = board.map((row, rowIndex) =>
-        row.map((cell, colIndex) => cell || newRevealed[rowIndex][colIndex])
-      );
-      setRevealed(allRevealed);
-      handleLoss();
-    } else {
-      // Revealed a gem
-      const newRevealedGems = revealedGems + 1;
-      setRevealedGems(newRevealedGems);
-      const newMultiplier = calculateMultiplier(newRevealedGems);
-      setCurrentMultiplier(newMultiplier);
-      setPotentialWin(betAmount * newMultiplier);
-  
-      // Check if all non-mine tiles are revealed
-      const allNonMinesRevealed = board.every((row, rowIndex) =>
-        row.every((cell, colIndex) => cell || newRevealed[rowIndex][colIndex])
-      );
-      if (allNonMinesRevealed) {
-        setGameStatus('won');
-        handleWin();
-      }
-    }
-  };
-  
+  // Update handleTileClick
+const handleTileClick = async (x, y) => {
+   if (gameStatus !== 'playing') return;
+   
+   if (!gameSignature) {
+       setNeedsSignature(true);
+       return;
+   }
 
-  const handleWin = async () => {
-    try {
-      const winMultiplier = Math.floor(currentMultiplier * 100); // Convert to integer for contract
-      const tx = await contract.endGame(revealedGems, winMultiplier, gameStateHash);
-      await tx.wait();
-      console.log("Game ended successfully - Win");
-      await updateBalance();
-      setGameStarted(false);
-      initializeGame();
-    } catch (error) {
-      console.error("Error ending game (win):", error);
-    }
-  };
+   const newRevealed = [...revealed];
+   newRevealed[y][x] = true;
+   setRevealed(newRevealed);
+
+   if (board[y][x]) {
+       // Hit mine - process loss automatically
+       await handleLoss();
+   } else {
+       const newRevealedGems = revealedGems + 1;
+       setRevealedGems(newRevealedGems);
+       const newMultiplier = calculateMultiplier(newRevealedGems);
+       setCurrentMultiplier(newMultiplier);
+       setPotentialWin(betAmount * newMultiplier);
+
+       const allNonMinesRevealed = board.every((row, rowIndex) =>
+           row.every((colIndex) => board[rowIndex][colIndex] || newRevealed[rowIndex][colIndex])
+       );
+       
+       if (allNonMinesRevealed) {
+           await handleWin();
+       }
+   }
+};
+  
+  const calculateMultiplier = (clickCount) => {
+    // Constants for multiplier calculation
+    const totalTiles = size * size;  // 5x5 = 25 tiles
+    const safeTiles = totalTiles - mines;  // number of non-mine tiles
+    
+    // Calculate probability based on remaining safe tiles
+    const probability = (safeTiles - clickCount) / (totalTiles - clickCount);
+    
+    // House edge (98% payout)
+    const houseEdge = 0.98;
+    
+    // Calculate multiplier with increasing bonus for each successful click
+    const multiplier = (houseEdge / probability) * (1 + clickCount * 0.1);
+    
+    return multiplier;
+};
+
+
+  const handleWin = () => handleGameOutcome(true);
 
   const handleCashOutAll = async () => {
     console.log("Contract initialized:", !!contract);
@@ -722,40 +1436,139 @@ const MinesGame = () => {
     }
   };
 
-  const handleBetCashout = async () => {
-    if (gameStatus === 'idle') {
-      if (betAmount > 0 && betAmount <= parseFloat(balance)) {
-        try {
-          const tx = await contract.startGame(ethers.parseEther(betAmount.toString()), mines, gems, gameStateHash);
-          await tx.wait();
-          setGameStatus('playing');
-          setGameStarted(true);
-          await updateBalance();
-        } catch (error) {
-          if (error.reason === "Game already in progress") {
-            console.log("Game already in progress. Continuing the existing game.");
-            setGameStatus('playing');
-            setGameStarted(true);
-            await checkGameInProgress();
-          } else {
-            console.error("Error starting game:", error);
-          }
-        }
-      }
-    } else if (gameStatus === 'playing') {
-      try {
-        const winMultiplier = Math.floor(currentMultiplier * 100);
-        const tx = await contract.endGame(revealedGems, winMultiplier, gameStateHash);
-        await tx.wait();
-        setGameStatus('idle');
-        setGameStarted(false);
-        initializeGame();
-        await updateBalance();
-      } catch (error) {
-        console.error("Error ending game:", error);
-      }
-    }
-  };
+ // Update the handleBetCashout function to use the new hash
+const handleBetCashout = async () => {
+   if (!contract || !signer) return;
+
+   if (gameStatus === 'idle') {
+       try {
+           // Validate inputs
+           if (!betAmount || betAmount <= 0) {
+               alert("Please enter a valid bet amount");
+               return;
+           }
+
+           // Generate game state hash
+           const gameStateHash = getGameStateHash();
+           
+           // Log game start parameters
+           console.log('Starting Game:', {
+               betAmount: ethers.parseEther(betAmount.toString()).toString(),
+               mines,
+               gems,
+               gameStateHash
+           });
+
+           setGameStatus('processing');
+
+           // Start the game
+           const tx = await contract.startGame(
+               ethers.parseEther(betAmount.toString()),
+               mines,
+               gems,
+               gameStateHash,
+               {
+                   gasLimit: 500000
+               }
+           );
+
+           console.log("Transaction sent:", tx.hash);
+           
+           const receipt = await tx.wait();
+           
+           // Verify the hash was accepted
+           if (receipt.status === 1) {
+               const hashVerified = await verifyGameStateHash(gameStateHash);
+               if (!hashVerified) {
+                   console.warn('Game state hash mismatch after transaction');
+               }
+               
+               setGameStatus('playing');
+               setGameStarted(true);
+               await updateBalance();
+           } else {
+               throw new Error("Transaction failed");
+           }
+
+       } catch (error) {
+           console.error("Error starting game:", error);
+           setGameStatus('idle');
+           alert(`Error starting game: ${error.message}`);
+       }
+   } else if (gameStatus === 'playing') {
+       try {
+           const winMultiplier = Math.floor(currentMultiplier * 100);
+           await handleGameOutcome(true);
+       } catch (error) {
+           console.error("Error processing cashout:", error);
+           alert("Error processing cashout. Please try again.");
+       }
+   }
+};
+
+
+// Add these helper functions
+const validateGameConfig = () => {
+   if (mines < 1 || mines >= 25) {
+       throw new Error("Invalid number of mines");
+   }
+   if (gems !== 25 - mines) {
+       throw new Error("Invalid number of gems");
+   }
+   if (betAmount <= 0) {
+       throw new Error("Invalid bet amount");
+   }
+};
+
+const getGameStateHash = () => {
+   // Convert the board into a simple string representation
+   const boardString = board.map(row => 
+       row.map(cell => cell ? '1' : '0').join('')
+   ).join('');
+
+   // Pack the values in the same way as the contract
+   const packedData = ethers.solidityPacked(
+       ['string', 'uint256', 'uint256', 'uint256'],
+       [boardString, mines, gems, ethers.parseEther(betAmount.toString())]
+   );
+
+   // Generate the hash
+   const gameStateHash = ethers.keccak256(packedData);
+
+   // Log the data for debugging
+   console.log('Game State Hash Details:', {
+       boardString,
+       mines,
+       gems,
+       betAmount: ethers.parseEther(betAmount.toString()).toString(),
+       packedData,
+       gameStateHash
+   });
+
+   return gameStateHash;
+};
+
+// Helper function to verify the hash matches the contract's hash
+const verifyGameStateHash = async (gameStateHash) => {
+   if (!contract || !signer) return false;
+
+   try {
+       const address = await signer.getAddress();
+       const gameState = await contract.getGameState(address);
+       
+       console.log('Game State Verification:', {
+           clientHash: gameStateHash,
+           contractHash: gameState.gameStateHash,
+           matches: gameStateHash === gameState.gameStateHash
+       });
+
+       return gameStateHash === gameState.gameStateHash;
+   } catch (error) {
+       console.error('Error verifying game state hash:', error);
+       return false;
+   }
+};
+
 
   const pickRandomTile = () => {
     const unrevealedTiles = [];
@@ -769,6 +1582,55 @@ const MinesGame = () => {
       handleTileClick(x, y);
     }
   };
+
+  const handleGameOutcome = async (isWin) => {
+   if (!contract || !signer) return;
+
+   setGameStatus('processing');
+
+   try {
+       const winMultiplier = isWin ? Math.floor(currentMultiplier * 100) : 0;
+
+       const tx = await contract.processGameOutcome(
+           revealedGems,
+           winMultiplier,
+           { gasLimit: 300000 }
+       );
+
+       // Update UI immediately
+       const allRevealed = board.map((row, rowIndex) =>
+           row.map((cell, colIndex) => cell || revealed[rowIndex][colIndex])
+       );
+       setRevealed(allRevealed);
+
+       // Handle transaction in background
+       tx.wait()
+           .then(() => {
+               console.log("Game outcome processed");
+               updateBalance();
+               setTimeout(() => {
+                   initializeGame();
+                   setGameStatus('idle');
+               }, 2000);
+           })
+           .catch(error => {
+               console.error("Error confirming game outcome:", error);
+               // Still reset UI even if transaction fails
+               setTimeout(() => {
+                   initializeGame();
+                   setGameStatus('idle');
+               }, 2000);
+           });
+
+   } catch (error) {
+       console.error("Error processing game outcome:", error);
+       setTimeout(() => {
+           initializeGame();
+           setGameStatus('idle');
+       }, 2000);
+   }
+};
+
 
   const renderBoard = () => {
     return board.map((row, y) => (
@@ -808,6 +1670,15 @@ const MinesGame = () => {
 
   return (
     <>
+     {showTransactionStatus()}
+     {SignaturePrompt()}
+    {(gameStatus === 'processing' || processingTransaction) && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-4 rounded">
+                    Processing transaction...
+                </div>
+            </div>
+        )}{<>
     <div className="flex bg-white/20 pt-5 pl-7 pr-7 text-white w-full justify-center  h-auto ">
       <div className="w-[450px] bg-[#120916] p-7 pt-7 pb-7  flex rounded-l-[40px] flex-col justify-center">
         <div className="mb-4">
@@ -986,6 +1857,8 @@ const MinesGame = () => {
         <div className='p-8'>Classic logic puzzle game where the goal is to clear a rectangular grid of hidden mines <br/>without detonating any</div>
     </div>
     </>
+}
+</>
   );
 };
 
