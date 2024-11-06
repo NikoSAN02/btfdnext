@@ -1764,7 +1764,7 @@ const verifyGameStateHash = async (gameStateHash) => {
             {withdrawalStatus === 'error' && 'Withdrawal failed. Please try again.'}
             {withdrawalStatus === 'pending' && 'Processing withdrawal...'}
           </div>
-        )} */}
+        )} 
         <div className="mb-4">
           <label className="block mb-2">Bet Amount: ${typeof betAmount === 'number' ? betAmount.toFixed(2) : '0.00'}</label>
           <div className='flex gap-2 justify-between'>
