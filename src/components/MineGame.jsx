@@ -1,6 +1,18 @@
+"use client"
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import Image from 'next/image';
+
+import { X } from 'lucide-react'
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+
 import MineGameJSON from './contract/MineGame.json';
 
 // ABI and contract address would be imported from separate files in a real project
@@ -733,6 +745,7 @@ const contractABI = [
 const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ;
 
 const MinesGame = () => {
+  const [isOpen, setIsOpen] = useState(false)
   const [size] = useState(5);
   const [board, setBoard] = useState([]);
   const [revealed, setRevealed] = useState([]);
@@ -1633,6 +1646,7 @@ const verifyGameStateHash = async (gameStateHash) => {
 
 
   const renderBoard = () => {
+    
     return board.map((row, y) => (
       <div key={y} className="flex">
         {row.map((isMine, x) => (
@@ -1750,7 +1764,7 @@ const verifyGameStateHash = async (gameStateHash) => {
             {withdrawalStatus === 'error' && 'Withdrawal failed. Please try again.'}
             {withdrawalStatus === 'pending' && 'Processing withdrawal...'}
           </div>
-        )}
+        )} */}
         <div className="mb-4">
           <label className="block mb-2">Bet Amount: ${typeof betAmount === 'number' ? betAmount.toFixed(2) : '0.00'}</label>
           <div className='flex gap-2 justify-between'>
@@ -1823,7 +1837,111 @@ const verifyGameStateHash = async (gameStateHash) => {
         </button>
         </div>
       </div>
-      <div className="relative bg-[#120916] rounded-r-[40px] w-2/3 flex items-center justify-center bg-[url('/images/bgFor btfd2 1.png')] bg-cover bg-center ">
+      <div className="relative bg-[#120916] rounded-r-[40px] w-2/3 flex items-start justify-center bg-[url('/images/bgFor btfd2 1.png')] bg-cover bg-center ">
+      <div className='absolute z-30 w-[290px] font-semibold pt-7 '>
+      <div className=" w-full">
+         
+          <div className='flex gap-2 justify-between'>
+          <div className="bg-[#393841] text-white p-4 rounded-[20px] w-full  flex justify-between items-center">
+            <span>${parseFloat(balance).toFixed(2)}</span>
+            
+          </div>
+          <Dialog  open={isOpen} onOpenChange={setIsOpen}>
+              <DialogTrigger asChild>
+                <button 
+                  className="w-2/4 text-white px-4 py-2 rounded-[20px] cursor-pointer bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+                  onClick={() => setIsOpen(true)}
+                >
+                  Wallet
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[450px] rounded-[25px] bg-[#0B090D] font-semibold">
+                <DialogHeader>
+                  <DialogTitle className='text-center text-xl'>Wallet</DialogTitle>
+                  <button
+                    className="absolute right-4 top-4 rounded-full p-2"
+                    onClick={() => setIsOpen(false)}
+                    variant="ghost"
+                  >
+                   
+                    <span className="sr-only text-[#FF09E7] ">Close</span>
+                  </button>
+                </DialogHeader>
+                <div className="mb-4">
+          <label className="block mb-2">Balance</label>
+          <div className='flex gap-2 justify-between'>
+          <div className="bg-[#393841] text-white p-4 rounded-[20px] w-full  flex justify-between items-center">
+            <span>${parseFloat(balance).toFixed(2)}</span>
+            
+          </div>
+          <button 
+              className="w-2/4 bg-[#2E262D] text-white px-4 py-2 rounded-[20px] cursor-pointer hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+              onClick={handleCashOutAll}
+              disabled={parseFloat(balance) <= 0}
+            >
+              Cash Out All
+            </button>
+            </div>
+        </div>
+        <div className="mb-4">
+          <label className="block mb-2">Deposit Amount</label>
+            <div className='flex gap-2 justify-between'>
+          <div className=" w-full flex justify-between items-center">
+            <input
+              type="number"
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(parseFloat(e.target.value))}
+              className=" bg-[#393841] text-white p-4 rounded-[20px] w-full"
+              step="0.01"
+            />
+            
+          </div>
+          <button 
+              className="w-2/4 bg-[#2E262D] text-white px-4 py-2 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+              onClick={handleDeposit}
+            >
+              Deposit
+            </button>
+          </div>
+          
+        </div>
+        <div className="mb-4">
+          <label className="block mb-2">Withdraw Amount</label>
+          <div className='flex gap-2 justify-between'>
+          <div className="w-full   flex justify-between items-center">
+            <input
+              type="number"
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(parseFloat(e.target.value))}
+              className=" bg-[#393841] text-white p-4 rounded-[20px] w-full"
+              step="0.01"
+            />
+            
+          </div>
+          <button 
+              className=" w-2/4 bg-[#2E262D] text-white px-4 py-2 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+              onClick={handleWithdraw}
+            >
+              Withdraw
+            </button>
+          </div>
+        </div>
+        {withdrawalStatus && (
+          <div className={`mb-4 p-2 rounded ${
+            withdrawalStatus === 'success' ? 'bg-green-500' :
+            withdrawalStatus === 'error' ? 'bg-red-500' :
+            'bg-yellow-500'
+          }`}>
+            {withdrawalStatus === 'success' && 'Withdrawal successful!'}
+            {withdrawalStatus === 'error' && 'Withdrawal failed. Please try again.'}
+            {withdrawalStatus === 'pending' && 'Processing withdrawal...'}
+          </div>)}
+              </DialogContent>
+            </Dialog>
+            </div>
+            </div>
+      </div>
+      <div className='h-full w-full flex items-center justify-center'>
       <div className='absolute bottom-0 left-20 z-10'>
         <Image
         src='/images/memenoi 1.png'
@@ -1851,6 +1969,7 @@ const verifyGameStateHash = async (gameStateHash) => {
         <div className="flex flex-col items-center z-20">
           {renderBoard()}
         </div>
+      </div>
       </div>
     </div>
     <div className='bg-white/20 h-[200px]'>
