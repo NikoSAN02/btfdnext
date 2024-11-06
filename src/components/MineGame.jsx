@@ -29,35 +29,6 @@ const contractABI = [
       "inputs":[
          
       ],
-      "name":"ECDSAInvalidSignature",
-      "type":"error"
-   },
-   {
-      "inputs":[
-         {
-            "internalType":"uint256",
-            "name":"length",
-            "type":"uint256"
-         }
-      ],
-      "name":"ECDSAInvalidSignatureLength",
-      "type":"error"
-   },
-   {
-      "inputs":[
-         {
-            "internalType":"bytes32",
-            "name":"s",
-            "type":"bytes32"
-         }
-      ],
-      "name":"ECDSAInvalidSignatureS",
-      "type":"error"
-   },
-   {
-      "inputs":[
-         
-      ],
       "name":"FailedCall",
       "type":"error"
    },
@@ -130,11 +101,17 @@ const contractABI = [
          {
             "indexed":false,
             "internalType":"uint256",
-            "name":"validUntil",
+            "name":"winAmount",
             "type":"uint256"
+         },
+         {
+            "indexed":false,
+            "internalType":"bytes32",
+            "name":"gameStateHash",
+            "type":"bytes32"
          }
       ],
-      "name":"GameAuthorizationSet",
+      "name":"GameEnded",
       "type":"event"
    },
    {
@@ -149,17 +126,11 @@ const contractABI = [
          {
             "indexed":false,
             "internalType":"uint256",
-            "name":"winAmount",
+            "name":"betAmount",
             "type":"uint256"
-         },
-         {
-            "indexed":false,
-            "internalType":"bytes32",
-            "name":"gameStateHash",
-            "type":"bytes32"
          }
       ],
-      "name":"GameEnded",
+      "name":"GameLost",
       "type":"event"
    },
    {
@@ -370,11 +341,7 @@ const contractABI = [
    },
    {
       "inputs":[
-         {
-            "internalType":"bytes",
-            "name":"signature",
-            "type":"bytes"
-         }
+         
       ],
       "name":"deposit",
       "outputs":[
@@ -385,36 +352,13 @@ const contractABI = [
    },
    {
       "inputs":[
-         {
-            "internalType":"address",
-            "name":"",
-            "type":"address"
-         }
+         
       ],
-      "name":"gameAuthorizations",
+      "name":"forceGameEnd",
       "outputs":[
-         {
-            "internalType":"bytes",
-            "name":"signature",
-            "type":"bytes"
-         },
-         {
-            "internalType":"uint256",
-            "name":"signedAt",
-            "type":"uint256"
-         },
-         {
-            "internalType":"bool",
-            "name":"isValid",
-            "type":"bool"
-         },
-         {
-            "internalType":"uint256",
-            "name":"validUntil",
-            "type":"uint256"
-         }
+         
       ],
-      "stateMutability":"view",
+      "stateMutability":"nonpayable",
       "type":"function"
    },
    {
@@ -455,6 +399,11 @@ const contractABI = [
          {
             "internalType":"bool",
             "name":"isActive",
+            "type":"bool"
+         },
+         {
+            "internalType":"bool",
+            "name":"isLost",
             "type":"bool"
          }
       ],
@@ -514,9 +463,25 @@ const contractABI = [
             "internalType":"bytes32",
             "name":"gameStateHash",
             "type":"bytes32"
+         },
+         {
+            "internalType":"bool",
+            "name":"isLost",
+            "type":"bool"
          }
       ],
       "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"handleLostGame",
+      "outputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
       "type":"function"
    },
    {
@@ -765,9 +730,43 @@ const MinesGame = () => {
   const [withdrawalStatus, setWithdrawalStatus] = useState(null);
   const [gameStatus, setGameStatus] = useState('idle'); // Can be 'idle', 'playing', 'won', or 'lost'
 
-  const [gameSignature, setGameSignature] = useState(null);
   const [processingTransaction, setProcessingTransaction] = useState(false);
-  const [needsSignature, setNeedsSignature] = useState(false);
+
+   const [cleanupQueue, setCleanupQueue] = useState(new Set());
+   const [isProcessingCleanup, setIsProcessingCleanup] = useState(false);
+
+   const addToCleanupQueue = (address) => {
+      setCleanupQueue(prev => new Set(prev).add(address));
+   };
+
+   const processCleanupQueue = async () => {
+      if (isProcessingCleanup || !contract || !signer) return;
+      
+      setIsProcessingCleanup(true);
+      try {
+         const address = await signer.getAddress();
+         if (cleanupQueue.has(address)) {
+               try {
+                  const tx = await contract.forceGameEnd({ gasLimit: 300000 });
+                  await tx.wait();
+                  setCleanupQueue(prev => {
+                     const newQueue = new Set(prev);
+                     newQueue.delete(address);
+                     return newQueue;
+                  });
+               } catch (error) {
+                  console.error("Cleanup attempt failed:", error);
+               }
+         }
+      } finally {
+         setIsProcessingCleanup(false);
+      }
+   };
+
+   useEffect(() => {
+      const interval = setInterval(processCleanupQueue, 10000); // Try every 10 seconds
+      return () => clearInterval(interval);
+   }, [cleanupQueue, isProcessingCleanup]);
 
 
   const checkOwnerAndPauseStatus = async () => {
@@ -788,7 +787,6 @@ const MinesGame = () => {
 
   useEffect(() => {
     if (contract && signer) {
-      checkGameAuthorization();
       checkGameInProgress();
       updateBalance();
     }
@@ -814,25 +812,7 @@ const MinesGame = () => {
     }
   };
 
-  const SignatureRequest = () => {
-   if (needsSignature) {
-       return (
-           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-               <div className="bg-white p-4 rounded text-black">
-                   <p>Please authorize game actions</p>
-                   <button 
-                       onClick={handleDeposit} 
-                       className="mt-4 bg-[#2E262D] text-white px-4 py-2 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
-                   >
-                       Sign
-                   </button>
-               </div>
-           </div>
-       );
-   }
-   return null;
-};
-
+  
   // Function to get authorization signature without deposit
 const getGameAuthorization = async () => {
    if (!contract || !signer) return null;
@@ -898,30 +878,45 @@ const checkGameState = async () => {
     }
   };
 
-  const checkGameInProgress = async () => {
+ // Modify checkGameInProgress to use stored signature
+ const checkGameInProgress = async () => {
+   if (!contract || !signer) return;
+   
    try {
        const address = await signer.getAddress();
        const gameState = await contract.getGameState(address);
        
        if (gameState.isActive) {
-           // Check for stored signature
-           const signature = sessionStorage.getItem('gameSignature');
-           if (!signature) {
-               setNeedsSignature(true);
-               return;
+           const isOldGame = await checkIfOldGame(gameState);
+           if (isOldGame) {
+               try {
+                   await contract.forceGameEnd({ gasLimit: 300000 });
+               } catch (error) {
+                   console.error("Failed to force end old game:", error);
+                   addToCleanupQueue(address);
+               }
+           } else {
+               setGameStarted(true);
+               setGameStatus('playing');
+               setBetAmount(ethers.formatEther(gameState.betAmount));
+               setMines(Number(gameState.mines));
+               setGems(Number(gameState.gems));
+               setGameStateHash(gameState.gameStateHash);
            }
-
-           setGameStarted(true);
-           setGameStatus('playing');
-           setBetAmount(ethers.formatEther(gameState.betAmount));
-           setMines(Number(gameState.mines));
-           setGems(Number(gameState.gems));
-           setGameStateHash(gameState.gameStateHash);
-           setGameSignature(signature);
-           console.log("Game in progress restored");
        }
    } catch (error) {
        console.error("Error checking game state:", error);
+   }
+};
+
+// Helper function to check if a game is old (e.g., from a failed transaction)
+const checkIfOldGame = async (gameState) => {
+   try {
+       // You might want to add a timestamp to your Game struct in the contract
+       // For now, we'll just provide a way to force end the game
+       return true; // Always treat as old game if there's an issue
+   } catch (error) {
+       return true;
    }
 };
 
@@ -998,117 +993,66 @@ const GameErrorBoundary = ({ children }) => {
    return children;
 };
 
-const handleLoss = () => handleGameOutcome(false);
-
-const checkGameAuthorization = async () => {
-   if (!contract || !signer) return false;
+const handleLoss = async () => {
+   if (!contract || !signer) return;
+   
+   setGameStatus('processing');
    
    try {
        const address = await signer.getAddress();
-       const auth = await contract.gameAuthorizations(address);
-       
-       if (auth.isValid && auth.validUntil * 1000n > BigInt(Date.now())) {
-           const signature = sessionStorage.getItem('gameSignature');
-           if (signature) {
-               setGameSignature(signature);
-               return true;
-           }
-           
-           setNeedsSignature(true);
-           return false;
-       }
-       return false;
+       const tx = await contract.processGameOutcome(0, 0, { gasLimit: 300000 });
+       await tx.wait();
    } catch (error) {
-       console.error("Error checking authorization:", error);
-       return false;
+       console.error("Error processing loss:", error);
+       
+       try {
+           // Get user address
+           const address = await signer.getAddress();
+           console.log("Attempting to force end game...");
+           const forceTx = await contract.forceGameEnd({ gasLimit: 300000 });
+           await forceTx.wait();
+       } catch (forceError) {
+           console.error("Force end failed:", forceError);
+           // If both attempts fail, we'll just reset the UI state
+           // and let the user start a new game
+           try {
+               // One final attempt to clear game state
+               const gameState = await contract.getGameState(await signer.getAddress());
+               if (gameState.isActive) {
+                   alert("Unable to process game end. Please try starting a new game.");
+               }
+           } catch (finalError) {
+               console.error("Final check failed:", finalError);
+           }
+       }
+   } finally {
+       // Always cleanup UI state regardless of contract state
+       setGameStatus('idle');
+       setGameStarted(false);
+       initializeGame();
+       await updateBalance();
    }
 };
 
+
+// Update deposit function to remove signature requirement
 const handleDeposit = async () => {
    if (!contract || !signer || depositAmount <= 0) return;
    
    try {
        setProcessingTransaction(true);
        
-       // Get current address and chain ID
-       const address = await signer.getAddress();
-       const chainId = await signer.provider.getNetwork().then(n => n.chainId);
-       
-       // Create the message to sign - EXACTLY as in the contract
-       const messageToSign = ethers.solidityPacked(
-           ['address', 'uint256', 'string'],
-           [address, chainId, 'AUTHORIZE_DEPOSIT']
-       );
-       
-       // Hash the message
-       const messageHash = ethers.keccak256(messageToSign);
-       
-       // Sign the hash - this will automatically add the Ethereum Signed Message prefix
-       const signature = await signer.signMessage(ethers.getBytes(messageHash));
-       
-       // Log all the details for debugging
-       console.log('Signing Details:', {
-           address,
-           chainId: chainId.toString(),
-           messageToSign,
-           messageHash,
-           signature
+       const tx = await contract.deposit({
+           value: ethers.parseEther(depositAmount.toString())
        });
 
-       // Verify the signature locally before sending
-       const recoveredAddress = ethers.verifyMessage(
-           ethers.getBytes(messageHash),
-           signature
-       );
-
-       console.log('Signature Verification:', {
-           originalSigner: address.toLowerCase(),
-           recoveredSigner: recoveredAddress.toLowerCase(),
-           matches: address.toLowerCase() === recoveredAddress.toLowerCase()
-       });
-
-       if (address.toLowerCase() !== recoveredAddress.toLowerCase()) {
-           throw new Error('Local signature verification failed');
-       }
-
-       // Store the signature
-       sessionStorage.setItem('gameSignature', signature);
-       setGameSignature(signature);
-
-       // Send the transaction
-       const tx = await contract.deposit(signature, {
-           value: ethers.parseEther(depositAmount.toString()),
-           gasLimit: 300000
-       });
-
-       console.log('Transaction sent:', tx.hash);
-
-       const receipt = await tx.wait();
-       console.log('Transaction receipt:', receipt);
-
+       await tx.wait();
        await updateBalance();
        setDepositAmount(0);
-       setNeedsSignature(false);
 
    } catch (error) {
        console.error('Deposit Error:', error);
-       
-       // Detailed error logging
-       if (error.transaction) {
-           console.error('Failed Transaction:', {
-               hash: error.transaction.hash,
-               from: error.transaction.from,
-               to: error.transaction.to,
-               data: error.transaction.data,
-               value: error.transaction.value
-           });
-       }
-       
-       if (error.receipt) {
-           console.error('Transaction Receipt:', error.receipt);
-       }
-
-       alert(`Deposit failed: ${error.message || 'Unknown error'}`);
+       alert(`Deposit failed: ${error.message}`);
    } finally {
        setProcessingTransaction(false);
    }
@@ -1198,44 +1142,6 @@ const verifySignature = async (signature) => {
    }
 };
 
-const SignaturePrompt = () => {
-   if (needsSignature) {
-       return (
-           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-               <div className="bg-white p-4 rounded text-black">
-                   <p>Please sign to continue your game</p>
-                   <button 
-                       onClick={getGameAuthorization}
-                       className="mt-4 bg-[#2E262D] text-white px-4 py-2 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
-                   >
-                       Sign
-                   </button>
-               </div>
-           </div>
-       );
-   }
-   return null;
-};
-
-// Add to your useEffect cleanup
-useEffect(() => {
-   return () => {
-       // Clear signature on unmount
-       sessionStorage.removeItem('gameSignature');
-   };
-}, []);
-
-useEffect(() => {
-  if (contract) {
-      // Log contract interface info
-      console.log("Contract interface:", {
-          deposit: contract.interface.getFunction('deposit'),
-          abi: contract.interface.format()
-      });
-  }
-}, [contract]);
-
-
 const showTransactionStatus = () => {
   if (processingTransaction || gameStatus === 'processing') {
       return (
@@ -1268,21 +1174,17 @@ const showTransactionStatus = () => {
     }
   };
 
-  // Update handleTileClick
+// Update handleTileClick to properly handle losses
 const handleTileClick = async (x, y) => {
    if (gameStatus !== 'playing') return;
-   
-   if (!gameSignature) {
-       setNeedsSignature(true);
-       return;
-   }
 
    const newRevealed = [...revealed];
    newRevealed[y][x] = true;
    setRevealed(newRevealed);
 
    if (board[y][x]) {
-       // Hit mine - process loss automatically
+       // Hit a mine - process as loss
+       setGameStatus('processing');
        await handleLoss();
    } else {
        const newRevealedGems = revealedGems + 1;
@@ -1296,7 +1198,8 @@ const handleTileClick = async (x, y) => {
        );
        
        if (allNonMinesRevealed) {
-           await handleWin();
+           setGameStatus('processing');
+           await handleGameOutcome(true);
        }
    }
 };
@@ -1449,76 +1352,85 @@ const handleTileClick = async (x, y) => {
     }
   };
 
- // Update the handleBetCashout function to use the new hash
-const handleBetCashout = async () => {
+ // Update handleBetCashout to check cleanup queue first
+ const handleBetCashout = async () => {
    if (!contract || !signer) return;
 
-   if (gameStatus === 'idle') {
-       try {
-           // Validate inputs
+   try {
+       const address = await signer.getAddress();
+       const gameState = await contract.getGameState(address);
+       
+       // If there's an active game, try to clear it first
+       if (gameState.isActive) {
+           await handleActivateGameCleanup();
+           // Check again after cleanup attempt
+           const newGameState = await contract.getGameState(address);
+           if (newGameState.isActive) {
+               alert("There's still an active game. Please try again.");
+               return;
+           }
+       }
+
+       if (gameStatus === 'idle') {
+           // Start new game logic
            if (!betAmount || betAmount <= 0) {
                alert("Please enter a valid bet amount");
                return;
            }
 
-           // Generate game state hash
            const gameStateHash = getGameStateHash();
-           
-           // Log game start parameters
-           console.log('Starting Game:', {
-               betAmount: ethers.parseEther(betAmount.toString()).toString(),
-               mines,
-               gems,
-               gameStateHash
-           });
-
            setGameStatus('processing');
 
-           // Start the game
            const tx = await contract.startGame(
                ethers.parseEther(betAmount.toString()),
                mines,
                gems,
-               gameStateHash,
-               {
-                   gasLimit: 500000
-               }
+               gameStateHash
            );
 
-           console.log("Transaction sent:", tx.hash);
-           
-           const receipt = await tx.wait();
-           
-           // Verify the hash was accepted
-           if (receipt.status === 1) {
-               const hashVerified = await verifyGameStateHash(gameStateHash);
-               if (!hashVerified) {
-                   console.warn('Game state hash mismatch after transaction');
-               }
-               
-               setGameStatus('playing');
-               setGameStarted(true);
-               await updateBalance();
-           } else {
-               throw new Error("Transaction failed");
-           }
+           await tx.wait();
+           setGameStatus('playing');
+           setGameStarted(true);
+           await updateBalance();
 
-       } catch (error) {
-           console.error("Error starting game:", error);
-           setGameStatus('idle');
-           alert(`Error starting game: ${error.message}`);
-       }
-   } else if (gameStatus === 'playing') {
-       try {
+       } else if (gameStatus === 'playing') {
            const winMultiplier = Math.floor(currentMultiplier * 100);
            await handleGameOutcome(true);
-       } catch (error) {
-           console.error("Error processing cashout:", error);
-           alert("Error processing cashout. Please try again.");
        }
+   } catch (error) {
+       console.error("Error in bet/cashout:", error);
+       setGameStatus('idle');
+       alert(`Error: ${error.message}`);
    }
 };
 
+// New function to handle active game cleanup
+const handleActivateGameCleanup = async () => {
+   try {
+       const tx = await contract.forceGameEnd({ gasLimit: 300000 });
+       await tx.wait();
+       console.log("Successfully cleaned up active game");
+   } catch (error) {
+       console.error("Failed to clean up active game:", error);
+       throw new Error("Unable to clean up active game");
+   }
+};
+
+
+// Add cleanup button to UI for manual intervention
+const ForceCleanupButton = () => {
+   if (cleanupQueue.size > 0) {
+       return (
+           <button
+               onClick={processCleanupQueue}
+               className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+           >
+               Force Cleanup
+           </button>
+       );
+   }
+   return null;
+};
 
 // Add these helper functions
 const validateGameConfig = () => {
@@ -1533,32 +1445,18 @@ const validateGameConfig = () => {
    }
 };
 
+// Update getGameStateHash to match contract's hash generation
 const getGameStateHash = () => {
-   // Convert the board into a simple string representation
    const boardString = board.map(row => 
        row.map(cell => cell ? '1' : '0').join('')
    ).join('');
 
-   // Pack the values in the same way as the contract
-   const packedData = ethers.solidityPacked(
+   const packedData = ethers.solidityPackedKeccak256(
        ['string', 'uint256', 'uint256', 'uint256'],
        [boardString, mines, gems, ethers.parseEther(betAmount.toString())]
    );
 
-   // Generate the hash
-   const gameStateHash = ethers.keccak256(packedData);
-
-   // Log the data for debugging
-   console.log('Game State Hash Details:', {
-       boardString,
-       mines,
-       gems,
-       betAmount: ethers.parseEther(betAmount.toString()).toString(),
-       packedData,
-       gameStateHash
-   });
-
-   return gameStateHash;
+   return packedData;
 };
 
 // Helper function to verify the hash matches the contract's hash
@@ -1596,16 +1494,49 @@ const verifyGameStateHash = async (gameStateHash) => {
     }
   };
 
+  // Add a cleanup button component for manual intervention
+const CleanupButton = () => {
+   const [isCleaning, setIsCleaning] = useState(false);
+
+   const handleCleanup = async () => {
+       if (!contract || !signer || isCleaning) return;
+       
+       setIsCleaning(true);
+       try {
+           await handleActivateGameCleanup();
+           await updateBalance();
+           alert("Game state cleaned successfully!");
+       } catch (error) {
+           console.error("Manual cleanup failed:", error);
+           alert("Cleanup failed: " + error.message);
+       } finally {
+           setIsCleaning(false);
+       }
+   };
+
+   return (
+       <button
+           onClick={handleCleanup}
+           disabled={isCleaning}
+           className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:bg-gray-400"
+       >
+           {isCleaning ? "Cleaning..." : "Force Cleanup"}
+       </button>
+   );
+};
+
   const handleGameOutcome = async (isWin) => {
    if (!contract || !signer) return;
 
    setGameStatus('processing');
 
    try {
+       // If it's a loss, pass 0 for both revealedGems and multiplier
        const winMultiplier = isWin ? Math.floor(currentMultiplier * 100) : 0;
-
+       const gemsToReport = isWin ? revealedGems : 0;
+       
        const tx = await contract.processGameOutcome(
-           revealedGems,
+           gemsToReport,
            winMultiplier,
            { gasLimit: 300000 }
        );
@@ -1616,27 +1547,19 @@ const verifyGameStateHash = async (gameStateHash) => {
        );
        setRevealed(allRevealed);
 
-       // Handle transaction in background
-       tx.wait()
-           .then(() => {
-               console.log("Game outcome processed");
-               updateBalance();
-               setTimeout(() => {
-                   initializeGame();
-                   setGameStatus('idle');
-               }, 2000);
-           })
-           .catch(error => {
-               console.error("Error confirming game outcome:", error);
-               // Still reset UI even if transaction fails
-               setTimeout(() => {
-                   initializeGame();
-                   setGameStatus('idle');
-               }, 2000);
-           });
+       await tx.wait();
+       console.log("Game outcome processed:", isWin ? "Win" : "Loss");
+       await updateBalance();
+       
+       setTimeout(() => {
+           initializeGame();
+           setGameStatus('idle');
+       }, 2000);
 
    } catch (error) {
        console.error("Error processing game outcome:", error);
+       
+       // Still cleanup the game state even if transaction fails
        setTimeout(() => {
            initializeGame();
            setGameStatus('idle');
@@ -1685,7 +1608,6 @@ const verifyGameStateHash = async (gameStateHash) => {
   return (
     <>
      {showTransactionStatus()}
-     {SignaturePrompt()}
     {(gameStatus === 'processing' || processingTransaction) && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white p-4 rounded">
@@ -1778,6 +1700,16 @@ const verifyGameStateHash = async (gameStateHash) => {
             />
             
           </div>
+         <div className="flex justify-between items-center mb-4">
+            {/* Your existing controls */}
+            <ForceCleanupButton />
+         </div>
+         <div className="flex justify-between items-center mb-4">
+            <div className="flex gap-2">
+               {/* Your existing controls */}
+               <CleanupButton />
+            </div>
+         </div>
           <div className='flex w-2/4 gap-1'>
           <button className="w-full bg-[#2E262D] text-white px-4 py-2 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
               onClick={() => setBetAmount(prevBet => prevBet / 2)}>½</button>

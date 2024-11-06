@@ -10,35 +10,6 @@
       "inputs":[
          
       ],
-      "name":"ECDSAInvalidSignature",
-      "type":"error"
-   },
-   {
-      "inputs":[
-         {
-            "internalType":"uint256",
-            "name":"length",
-            "type":"uint256"
-         }
-      ],
-      "name":"ECDSAInvalidSignatureLength",
-      "type":"error"
-   },
-   {
-      "inputs":[
-         {
-            "internalType":"bytes32",
-            "name":"s",
-            "type":"bytes32"
-         }
-      ],
-      "name":"ECDSAInvalidSignatureS",
-      "type":"error"
-   },
-   {
-      "inputs":[
-         
-      ],
       "name":"FailedCall",
       "type":"error"
    },
@@ -111,11 +82,17 @@
          {
             "indexed":false,
             "internalType":"uint256",
-            "name":"validUntil",
+            "name":"winAmount",
             "type":"uint256"
+         },
+         {
+            "indexed":false,
+            "internalType":"bytes32",
+            "name":"gameStateHash",
+            "type":"bytes32"
          }
       ],
-      "name":"GameAuthorizationSet",
+      "name":"GameEnded",
       "type":"event"
    },
    {
@@ -130,17 +107,11 @@
          {
             "indexed":false,
             "internalType":"uint256",
-            "name":"winAmount",
+            "name":"betAmount",
             "type":"uint256"
-         },
-         {
-            "indexed":false,
-            "internalType":"bytes32",
-            "name":"gameStateHash",
-            "type":"bytes32"
          }
       ],
-      "name":"GameEnded",
+      "name":"GameLost",
       "type":"event"
    },
    {
@@ -351,11 +322,7 @@
    },
    {
       "inputs":[
-         {
-            "internalType":"bytes",
-            "name":"signature",
-            "type":"bytes"
-         }
+         
       ],
       "name":"deposit",
       "outputs":[
@@ -366,36 +333,13 @@
    },
    {
       "inputs":[
-         {
-            "internalType":"address",
-            "name":"",
-            "type":"address"
-         }
+         
       ],
-      "name":"gameAuthorizations",
+      "name":"forceGameEnd",
       "outputs":[
-         {
-            "internalType":"bytes",
-            "name":"signature",
-            "type":"bytes"
-         },
-         {
-            "internalType":"uint256",
-            "name":"signedAt",
-            "type":"uint256"
-         },
-         {
-            "internalType":"bool",
-            "name":"isValid",
-            "type":"bool"
-         },
-         {
-            "internalType":"uint256",
-            "name":"validUntil",
-            "type":"uint256"
-         }
+         
       ],
-      "stateMutability":"view",
+      "stateMutability":"nonpayable",
       "type":"function"
    },
    {
@@ -436,6 +380,11 @@
          {
             "internalType":"bool",
             "name":"isActive",
+            "type":"bool"
+         },
+         {
+            "internalType":"bool",
+            "name":"isLost",
             "type":"bool"
          }
       ],
@@ -495,9 +444,25 @@
             "internalType":"bytes32",
             "name":"gameStateHash",
             "type":"bytes32"
+         },
+         {
+            "internalType":"bool",
+            "name":"isLost",
+            "type":"bool"
          }
       ],
       "stateMutability":"view",
+      "type":"function"
+   },
+   {
+      "inputs":[
+         
+      ],
+      "name":"handleLostGame",
+      "outputs":[
+         
+      ],
+      "stateMutability":"nonpayable",
       "type":"function"
    },
    {
