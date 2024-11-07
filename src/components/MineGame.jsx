@@ -999,38 +999,16 @@ const handleLoss = async () => {
    setGameStatus('processing');
    
    try {
-       const address = await signer.getAddress();
        const tx = await contract.processGameOutcome(0, 0, { gasLimit: 300000 });
        await tx.wait();
+       await updateBalance();
    } catch (error) {
        console.error("Error processing loss:", error);
-       
-       try {
-           // Get user address
-           const address = await signer.getAddress();
-           console.log("Attempting to force end game...");
-           const forceTx = await contract.forceGameEnd({ gasLimit: 300000 });
-           await forceTx.wait();
-       } catch (forceError) {
-           console.error("Force end failed:", forceError);
-           // If both attempts fail, we'll just reset the UI state
-           // and let the user start a new game
-           try {
-               // One final attempt to clear game state
-               const gameState = await contract.getGameState(await signer.getAddress());
-               if (gameState.isActive) {
-                   alert("Unable to process game end. Please try starting a new game.");
-               }
-           } catch (finalError) {
-               console.error("Final check failed:", finalError);
-           }
-       }
    } finally {
-       // Always cleanup UI state regardless of contract state
+       // Always cleanup UI state
        setGameStatus('idle');
        setGameStarted(false);
        initializeGame();
-       await updateBalance();
    }
 };
 
@@ -1222,7 +1200,10 @@ const handleTileClick = async (x, y) => {
 };
 
 
-  const handleWin = () => handleGameOutcome(true);
+   // Remove handleGameOutcome call from handleBetCashout
+   const handleWin = () => {
+      handleBetCashout(); // This will handle the win case through the 'playing' branch
+   };
 
   const handleCashOutAll = async () => {
     console.log("Contract initialized:", !!contract);
@@ -1352,33 +1333,19 @@ const handleTileClick = async (x, y) => {
     }
   };
 
- // Update handleBetCashout to check cleanup queue first
- const handleBetCashout = async () => {
+// Update handleBetCashout to show better error message
+const handleBetCashout = async () => {
    if (!contract || !signer) return;
 
-   try {
-       const address = await signer.getAddress();
-       const gameState = await contract.getGameState(address);
-       
-       // If there's an active game, try to clear it first
-       if (gameState.isActive) {
-           await handleActivateGameCleanup();
-           // Check again after cleanup attempt
-           const newGameState = await contract.getGameState(address);
-           if (newGameState.isActive) {
-               alert("There's still an active game. Please try again.");
-               return;
-           }
-       }
-
-       if (gameStatus === 'idle') {
-           // Start new game logic
+   if (gameStatus === 'idle') {
+       try {
            if (!betAmount || betAmount <= 0) {
                alert("Please enter a valid bet amount");
                return;
            }
 
            const gameStateHash = getGameStateHash();
+           
            setGameStatus('processing');
 
            const tx = await contract.startGame(
@@ -1393,14 +1360,37 @@ const handleTileClick = async (x, y) => {
            setGameStarted(true);
            await updateBalance();
 
-       } else if (gameStatus === 'playing') {
-           const winMultiplier = Math.floor(currentMultiplier * 100);
-           await handleGameOutcome(true);
+       } catch (error) {
+           console.error("Error starting game:", error);
+           if (error.message.includes("Game already in progress")) {
+               alert("Previous game was not properly ended. Please use Force Cleanup to continue playing.");
+           } else {
+               alert(`Error starting game: ${error.message}`);
+           }
+           setGameStatus('idle');
        }
-   } catch (error) {
-       console.error("Error in bet/cashout:", error);
-       setGameStatus('idle');
-       alert(`Error: ${error.message}`);
+   } else if (gameStatus === 'playing') {
+       try {
+           setGameStatus('processing');
+           const winMultiplier = Math.floor(currentMultiplier * 100);
+           
+           const tx = await contract.processGameOutcome(
+               revealedGems,
+               winMultiplier,
+               { gasLimit: 300000 }
+           );
+
+           await tx.wait();
+           await updateBalance();
+           setGameStatus('idle');
+           setGameStarted(false);
+           initializeGame();
+
+       } catch (error) {
+           console.error("Error processing cashout:", error);
+           setGameStatus('playing');
+           alert("Error processing cashout. Please try again.");
+       }
    }
 };
 
@@ -1495,35 +1485,61 @@ const verifyGameStateHash = async (gameStateHash) => {
   };
 
   // Add a cleanup button component for manual intervention
-const CleanupButton = () => {
+  const CleanupButton = () => {
+   const [isNeeded, setIsNeeded] = useState(false);
    const [isCleaning, setIsCleaning] = useState(false);
+
+   // Check if cleanup is needed
+   useEffect(() => {
+       const checkGameState = async () => {
+           if (!contract || !signer) return;
+           try {
+               const address = await signer.getAddress();
+               const gameState = await contract.getGameState(address);
+               setIsNeeded(gameState.isActive && gameStatus === 'idle');
+           } catch (error) {
+               console.error("Error checking game state:", error);
+           }
+       };
+
+       checkGameState();
+   }, [contract, signer, gameStatus]);
 
    const handleCleanup = async () => {
        if (!contract || !signer || isCleaning) return;
        
        setIsCleaning(true);
        try {
-           await handleActivateGameCleanup();
+           const tx = await contract.forceGameEnd({ gasLimit: 300000 });
+           await tx.wait();
            await updateBalance();
-           alert("Game state cleaned successfully!");
+           alert("Game cleaned up successfully! You can now start a new game.");
+           setGameStatus('idle');
+           setGameStarted(false);
+           initializeGame();
        } catch (error) {
-           console.error("Manual cleanup failed:", error);
-           alert("Cleanup failed: " + error.message);
+           console.error("Cleanup failed:", error);
+           alert("Cleanup failed. Please try again.");
        } finally {
            setIsCleaning(false);
        }
    };
 
+   // Only render the button if cleanup is needed
+   if (!isNeeded) return null;
+
    return (
        <button
            onClick={handleCleanup}
            disabled={isCleaning}
-           className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:bg-gray-400"
+           className="w-2/4 bg-[#2E262D] text-white px-4 py-2 rounded-[19px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
        >
            {isCleaning ? "Cleaning..." : "Force Cleanup"}
        </button>
    );
 };
+
+
 
   const handleGameOutcome = async (isWin) => {
    if (!contract || !signer) return;
@@ -1700,16 +1716,6 @@ const CleanupButton = () => {
             />
             
           </div>
-         <div className="flex justify-between items-center mb-4">
-            {/* Your existing controls */}
-            <ForceCleanupButton />
-         </div>
-         <div className="flex justify-between items-center mb-4">
-            <div className="flex gap-2">
-               {/* Your existing controls */}
-               <CleanupButton />
-            </div>
-         </div>
           <div className='flex w-2/4 gap-1'>
           <button className="w-full bg-[#2E262D] text-white px-4 py-2 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
               onClick={() => setBetAmount(prevBet => prevBet / 2)}>½</button>
@@ -1753,21 +1759,22 @@ const CleanupButton = () => {
           />
         </div>
         <div className='flex w-full gap-3'>
-        <button
-          onClick={pickRandomTile}
-          className="w-full cursor-pointer bg-[#2E262D] text-white hover: p-2 pt-4 pb-4 rounded-[19px]  mb-4 hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
-          disabled={!gameStarted}
-        >
-          Pick random tile
-        </button>
-        <button
-          onClick={handleBetCashout}
-          className={`w-2/4 ${gameStarted ? 'bg-gradient-to-r cursor-pointer from-[#7831DA] to-[#FF1AF0]' : 'bg-[#2E262D]'}  text-white p-2 rounded-[19px] mb-4 hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200`}
-          disabled={!gameStarted && betAmount > parseFloat(balance)}
-        >
-          {gameStarted ? 'Cashout' : 'Bet'}
-        </button>
-        </div>
+            <button
+                  onClick={pickRandomTile}
+                  className="w-full cursor-pointer bg-[#2E262D] text-white hover: p-2 pt-4 pb-4 rounded-[19px] mb-4 hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+                  disabled={!gameStarted}
+            >
+                  Pick random tile
+            </button>
+            <button
+                  onClick={handleBetCashout}
+                  className={`w-2/4 ${gameStarted ? 'bg-gradient-to-r cursor-pointer from-[#7831DA] to-[#FF1AF0]' : 'bg-[#2E262D]'} text-white p-2 rounded-[19px] mb-4 hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200`}
+                  disabled={!gameStarted && betAmount > parseFloat(balance)}
+            >
+                  {gameStarted ? 'Cashout' : 'Bet'}
+            </button>
+            <CleanupButton />
+         </div>
       </div>
       <div className="relative bg-[#120916] rounded-r-[40px] w-2/3 flex items-start justify-center bg-[url('/images/bgFor btfd2 1.png')] bg-cover bg-center ">
       <div className='absolute z-30 w-[290px] font-semibold pt-7 '>
