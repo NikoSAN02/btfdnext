@@ -1591,7 +1591,7 @@ const verifyGameStateHash = async (gameStateHash) => {
         {row.map((isMine, x) => (
           <button
             key={`${x}-${y}`}
-            className={`w-[83px] h-[83px] m-1 rounded-[26px] flex items-center justify-center border-[#4A0943] border-2 cursor-pointer ${
+            className={`sm:w-[83px] sm:h-[83px] h-[43px] w-[43px] sm:gap-0 gap-3 m-1 rounded-[26px] flex items-center justify-center border-[#4A0943] border-2 cursor-pointer ${
               revealed[y][x]
                 ? isMine
                   ? 'bg-red-500'
@@ -1631,78 +1631,11 @@ const verifyGameStateHash = async (gameStateHash) => {
                 </div>
             </div>
         )}{<>
-    <div className="flex bg-white/20 pt-5 pl-7 pr-7 text-white w-full justify-center  h-auto ">
-      <div className="w-[450px] bg-[#120916] p-7 pt-7 pb-7  flex rounded-l-[40px] flex-col justify-center">
-        <div className="mb-4">
-          <label className="block mb-2">Balance</label>
-          <div className='flex gap-2 justify-between'>
-          <div className="bg-[#393841] text-white p-4 rounded-[20px] w-full  flex justify-between items-center">
-            <span>${parseFloat(balance).toFixed(2)}</span>
-            
-          </div>
-          <button 
-              className="w-2/4 bg-[#2E262D] text-white px-4 py-2 rounded-[20px] cursor-pointer hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
-              onClick={handleCashOutAll}
-              disabled={parseFloat(balance) <= 0}
-            >
-              Cash Out All
-            </button>
-            </div>
-        </div>
-        <div className="mb-4">
-          <label className="block mb-2">Deposit Amount</label>
-            <div className='flex gap-2 justify-between'>
-          <div className=" w-full flex justify-between items-center">
-            <input
-              type="number"
-              value={depositAmount}
-              onChange={(e) => setDepositAmount(parseFloat(e.target.value))}
-              className=" bg-[#393841] text-white p-4 rounded-[20px] w-full"
-              step="0.01"
-            />
-            
-          </div>
-          <button 
-              className="w-2/4 bg-[#2E262D] text-white px-4 py-2 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
-              onClick={handleDeposit}
-            >
-              Deposit
-            </button>
-          </div>
-          
-        </div>
-        <div className="mb-4">
-          <label className="block mb-2">Withdraw Amount</label>
-          <div className='flex gap-2 justify-between'>
-          <div className="w-full   flex justify-between items-center">
-            <input
-              type="number"
-              value={withdrawAmount}
-              onChange={(e) => setWithdrawAmount(parseFloat(e.target.value))}
-              className=" bg-[#393841] text-white p-4 rounded-[20px] w-full"
-              step="0.01"
-            />
-            
-          </div>
-          <button 
-              className=" w-2/4 bg-[#2E262D] text-white px-4 py-2 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
-              onClick={handleWithdraw}
-            >
-              Withdraw
-            </button>
-          </div>
-        </div>
-        {withdrawalStatus && (
-          <div className={`mb-4 p-2 rounded ${
-            withdrawalStatus === 'success' ? 'bg-green-500' :
-            withdrawalStatus === 'error' ? 'bg-red-500' :
-            'bg-yellow-500'
-          }`}>
-            {withdrawalStatus === 'success' && 'Withdrawal successful!'}
-            {withdrawalStatus === 'error' && 'Withdrawal failed. Please try again.'}
-            {withdrawalStatus === 'pending' && 'Processing withdrawal...'}
-          </div>
-        )} 
+    <div className="sm:flex sm:flex-row flex flex-col-reverse bg-white/20 sm:pt-5 sm:pl-7 sm:pr-7 text-white justify-end sm:justify-center  w-full  sm:h-[750px] overflow-visible">
+      <div className="sm:w-[450px] h-full w-full bg-[#120916] p-7 pt-7 pb-7  flex sm:rounded-l-[40px] sm:rounded-none rounded-b-[40px] flex-col justify-start font-semibold">
+        
+        
+        
         <div className="mb-4">
           <label className="block mb-2">Bet Amount: ${typeof betAmount === 'number' ? betAmount.toFixed(2) : '0.00'}</label>
           <div className='flex gap-2 justify-between'>
@@ -1768,15 +1701,22 @@ const verifyGameStateHash = async (gameStateHash) => {
             </button>
             <button
                   onClick={handleBetCashout}
-                  className={`w-2/4 ${gameStarted ? 'bg-gradient-to-r cursor-pointer from-[#7831DA] to-[#FF1AF0]' : 'bg-[#2E262D]'} text-white p-2 rounded-[19px] mb-4 hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200`}
+                  className={`w-2/4 cursor-pointer ${gameStarted ? 'bg-gradient-to-r cursor-pointer from-[#7831DA] to-[#FF1AF0]' : 'bg-[#2E262D]'} text-white p-2 rounded-[19px] mb-4 hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200`}
                   disabled={!gameStarted && betAmount > parseFloat(balance)}
             >
                   {gameStarted ? 'Cashout' : 'Bet'}
             </button>
-            <CleanupButton />
+            <button
+                  onClick={CleanupButton}
+                  className="w-full cursor-pointer bg-[#2E262D] text-white hover: p-2 pt-4 pb-4 rounded-[19px] mb-4 hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+                  disabled={!gameStarted}
+            >
+                  CleanupButton
+            </button>
+            
          </div>
       </div>
-      <div className="relative bg-[#120916] rounded-r-[40px] w-2/3 flex items-start justify-center bg-[url('/images/bgFor btfd2 1.png')] bg-cover bg-center ">
+      <div className="relative bg-[#120916] sm:rounded-r-[40px] sm:rounded-none sm:w-2/3 w-full h-[450px] sm:h-full flex items-start justify-center bg-[url('/images/bgFor btfd2 1.png')] bg-cover bg-center ">
       <div className='absolute z-30 w-[290px] font-semibold pt-7 '>
       <div className=" w-full">
          
@@ -1880,10 +1820,11 @@ const verifyGameStateHash = async (gameStateHash) => {
             </div>
             </div>
       </div>
-      <div className='h-full w-full flex items-center justify-center'>
+      <div className='h-full w-full sm:h-full sm:w-full flex items-center justify-center'>
       <div className='absolute bottom-0 left-20 z-10'>
         <Image
         src='/images/memenoi 1.png'
+        className='sm:h-[500px] sm:w-[500px] h-[150px] w-[150px]'
         alt=''
         height={500}
         width={500}
@@ -1891,6 +1832,7 @@ const verifyGameStateHash = async (gameStateHash) => {
       </div>
       <div className='absolute bottom-0 right-0 z-10'>
         <Image
+        className='sm:h-[500px] sm:w-[500px] h-[250px] w-[250px]'
         src='/images/pookie 1.png'
         alt=''
         height={500}
@@ -1899,6 +1841,7 @@ const verifyGameStateHash = async (gameStateHash) => {
       </div>
       <div className='absolute opacity-35'>
         <Image
+        
         src='/images/bgFor_btfd2_1.png'
         alt=''
         height={1500}
