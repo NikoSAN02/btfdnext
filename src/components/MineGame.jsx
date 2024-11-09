@@ -1591,7 +1591,7 @@ const verifyGameStateHash = async (gameStateHash) => {
         {row.map((isMine, x) => (
           <button
             key={`${x}-${y}`}
-            className={`sm:w-[83px] sm:h-[83px] h-[43px] w-[43px] sm:gap-0 gap-3 m-1 rounded-[26px] flex items-center justify-center border-[#4A0943] border-2 cursor-pointer ${
+            className={`sm:w-[83px] sm:h-[83px] h-[48px] w-[48px] sm:gap-0 gap-3 m-1 rounded-[26px] flex items-center justify-center border-[#4A0943] border-2 cursor-pointer ${
               revealed[y][x]
                 ? isMine
                   ? 'bg-red-500'
@@ -1631,8 +1631,8 @@ const verifyGameStateHash = async (gameStateHash) => {
                 </div>
             </div>
         )}{<>
-    <div className="sm:flex sm:flex-row flex flex-col-reverse bg-white/20 sm:pt-5 sm:pl-7 sm:pr-7 text-white justify-end sm:justify-center  w-full  sm:h-[750px] overflow-visible">
-      <div className="sm:w-[450px] h-full w-full bg-[#120916] p-7 pt-7 pb-7  flex sm:rounded-l-[40px] sm:rounded-none rounded-b-[40px] flex-col justify-start font-semibold">
+    <div className="sm:flex sm:flex-row flex flex-col-reverse bg-white/20 sm:pt-5 sm:pl-7 sm:pr-7 text-white justify-end sm:justify-center  w-full  sm:h-[750px] overflow-y-auto">
+      <div className="sm:w-[450px] h-full w-full bg-[#120916] p-7 pt-7 pb-7  flex sm:rounded-l-[40px] sm:rounded-none rounded-b-[40px] flex-col justify-start sm:font-semibold  overflow-y-auto">
         
         
         
@@ -1644,15 +1644,15 @@ const verifyGameStateHash = async (gameStateHash) => {
               type="number"
               value={betAmount}
               onChange={(e) => setBetAmount(parseFloat(e.target.value))}
-              className="bg-[#393841] text-white p-4 rounded-[20px] w-full"
+              className="bg-[#393841] text-white sm:p-4 p-3 rounded-[20px] w-full"
               step="0.01"
             />
             
           </div>
           <div className='flex w-2/4 gap-1'>
-          <button className="w-full bg-[#2E262D] text-white px-4 py-2 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+          <button className="w-full bg-[#2E262D] text-white sm:px-4 sm:py-2 px-2 py-0 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
               onClick={() => setBetAmount(prevBet => prevBet / 2)}>½</button>
-          <button className="w-full bg-[#2E262D] text-white px-4 py-2 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+          <button className="w-full bg-[#2E262D] text-white sm:px-4 sm:py-2 px-2 py-0 rounded-[20px] hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
                onClick={() => setBetAmount(prevBet => prevBet * 2)}>2x</button>
           </div>
           </div>
@@ -1665,7 +1665,7 @@ const verifyGameStateHash = async (gameStateHash) => {
               type="number"
               value={mines}
               onChange={(e) => setMines(Number(e.target.value))}
-             className="bg-[#393841] text-white p-4 rounded-[20px] w-full   flex justify-between items-center"
+             className="bg-[#393841] text-white sm:p-4 p-3 rounded-[20px] w-full   flex justify-between items-center"
               min="1"
               max="24"
             />
@@ -1675,7 +1675,7 @@ const verifyGameStateHash = async (gameStateHash) => {
             <input
               type="number"
               value={gems}
-              className="bg-[#393841] text-white p-4 rounded-[20px] w-2/4   flex justify-between items-center"
+              className="bg-[#393841] text-white sm:p-4 p-3  rounded-[20px] w-2/4   flex justify-between items-center"
 
               disabled
             />
@@ -1686,7 +1686,7 @@ const verifyGameStateHash = async (gameStateHash) => {
           <input
             type="text"
             value={`$${potentialWin.toFixed(2)}`}
-            className="bg-[#393841] text-white p-4 rounded-[20px] w-full  flex justify-between items-center"
+            className="bg-[#393841] text-white sm:p-4 p-3 rounded-[20px] w-full  flex justify-between items-center"
 
             disabled
           />
@@ -1694,7 +1694,7 @@ const verifyGameStateHash = async (gameStateHash) => {
         <div className='flex w-full gap-3'>
             <button
                   onClick={pickRandomTile}
-                  className="w-full cursor-pointer bg-[#2E262D] text-white hover: p-2 pt-4 pb-4 rounded-[19px] mb-4 hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+                  className="w-full cursor-pointer bg-[#2E262D] text-white hover: sm:p-2 sm:pt-4 sm:pb-4 p-2 rounded-[19px] mb-4 hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
                   disabled={!gameStarted}
             >
                   Pick random tile
@@ -1708,7 +1708,7 @@ const verifyGameStateHash = async (gameStateHash) => {
             </button>
             <button
                   onClick={CleanupButton}
-                  className="w-full cursor-pointer bg-[#2E262D] text-white hover: p-2 pt-4 pb-4 rounded-[19px] mb-4 hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+                  className="w-full cursor-pointer bg-[#2E262D] text-white hover: sm:p-2 sm:pt-4 sm:pb-4 p-2 rounded-[19px] mb-4 hover:bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
                   disabled={!gameStarted}
             >
                   CleanupButton
@@ -1716,27 +1716,27 @@ const verifyGameStateHash = async (gameStateHash) => {
             
          </div>
       </div>
-      <div className="relative bg-[#120916] sm:rounded-r-[40px] sm:rounded-none sm:w-2/3 w-full h-[450px] sm:h-full flex items-start justify-center bg-[url('/images/bgFor btfd2 1.png')] bg-cover bg-center ">
+      <div className="relative bg-[#120916] sm:rounded-r-[40px] sm:rounded-none sm:w-2/3 w-full h-[500px] sm:h-full flex items-start justify-center bg-[url('/images/bgFor btfd2 1.png')] bg-cover bg-center overflow-y-auto">
       <div className='absolute z-30 w-[290px] font-semibold pt-7 '>
       <div className=" w-full">
          
           <div className='flex gap-2 justify-between'>
-          <div className="bg-[#393841] text-white p-4 rounded-[20px] w-full  flex justify-between items-center">
+          <div className="bg-[#393841] text-white sm:p-4 p-3 rounded-[20px] w-full  flex justify-between items-center">
             <span>${parseFloat(balance).toFixed(2)}</span>
             
           </div>
           <Dialog  open={isOpen} onOpenChange={setIsOpen}>
               <DialogTrigger asChild>
                 <button 
-                  className="w-2/4 text-white px-4 py-2 rounded-[20px] cursor-pointer bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
+                  className="w-2/4 text-white sm:px-4 sm:py-2 px-2 py-0 rounded-[20px] cursor-pointer bg-gradient-to-r from-[#7831DA] to-[#FF1AF0] transition duration-200"
                   onClick={() => setIsOpen(true)}
                 >
                   Wallet
                 </button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[450px] rounded-[25px] bg-[#0B090D] font-semibold">
+              <DialogContent className="sm:max-w-[450px] w-96 rounded-[25px] bg-[#0B090D] font-semibold ">
                 <DialogHeader>
-                  <DialogTitle className='text-center text-xl'>Wallet</DialogTitle>
+                  <DialogTitle className='text-center text-xl text-white '>Wallet</DialogTitle>
                   <button
                     className="absolute right-4 top-4 rounded-full p-2"
                     onClick={() => setIsOpen(false)}
@@ -1748,7 +1748,7 @@ const verifyGameStateHash = async (gameStateHash) => {
                 </DialogHeader>
                 <div className="mb-4">
           <label className="block mb-2">Balance</label>
-          <div className='flex gap-2 justify-between'>
+          <div className='flex gap-2 justify-center'>
           <div className="bg-[#393841] text-white p-4 rounded-[20px] w-full  flex justify-between items-center">
             <span>${parseFloat(balance).toFixed(2)}</span>
             
