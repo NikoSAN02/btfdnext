@@ -14,6 +14,67 @@ export default function Header() {
     setMobileMenuOpen(!mobileMenuOpen)
   }
 
+  const zkCandyTestnet = {
+    chainId: 302,
+    rpc: ["https://sepolia.rpc.zkcandy.io"],
+    nativeCurrency: {
+      name: "ETH",
+      symbol: "ETH",
+      decimals: 18,
+    },
+    shortName: "zkcandy",
+    slug: "zkcandy",
+    testnet: true,
+    chain: "zkCandy Sepolia Testnet",
+    name: "zkCandy Sepolia Testnet",
+  };
+
+  const chainIdHex = "0x" + (302).toString(16); // "0x12E"
+
+const connectButtonProps = {
+  client: client,
+  connectButton: {
+    style: {
+      borderRadius: "10px",
+    },
+  },
+  switchToActiveChain: true,
+  supportedTokens: [zkCandyTestnet],
+  onConnect: async (wallet) => {
+    try {
+      // First try to switch to the network
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: chainIdHex }],
+      });
+    } catch (switchError) {
+      // If the network doesn't exist, add it
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: chainIdHex,
+              chainName: 'zkCandy Testnet',
+              nativeCurrency: {
+                name: 'CANDY',
+                symbol: 'CANDY',
+                decimals: 18
+              },
+              rpcUrls: ['https://rpc-testnet.zkcandy.io'],
+              blockExplorerUrls: ['https://testnet.zkcandy.io/']
+            }]
+          });
+        } catch (addError) {
+          console.error('Error adding network:', addError);
+        }
+      } else {
+        console.error('Error switching network:', switchError);
+      }
+    }
+  },
+};
+
   const navItems = [
     { href: '/', label: 'Home' },
     { href: '/games', label: 'Games' },
@@ -57,7 +118,7 @@ export default function Header() {
         
         <div className="flex items-center space-x-3">
           <div className="lg:hidden">
-            <ConnectButton client={client} />
+            <ConnectButton client={client} {...connectButtonProps} />
           </div>
           <button onClick={toggleMobileMenu} className="lg:hidden z-10">
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -67,7 +128,7 @@ export default function Header() {
               style: {
                 borderRadius: "10px",
               },
-            }} client={client} />
+            }} client={client} {...connectButtonProps} />
           </div>
         </div>
 
