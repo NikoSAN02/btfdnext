@@ -19,8 +19,8 @@ export default function GamesPage() {
         <div className="bg-[#121212] rounded-lg overflow-hidden shadow-lg">
           <Image src="/images/MinesBG_1.png" alt="Mines Game" width={400} height={300} className="w-full h-48 object-cover" />
           <div className="p-6">
-            <h2 className="text-2xl font-bold mb-2">Mines</h2>
-            <p className="text-gray-300 mb-4">Play the exciting Mines game and test your luck!</p>
+            <h2 className="text-2xl font-bold mb-2">BTFD Survival</h2>
+            <p className="text-gray-300 mb-4">Buy the fucking dip and survive degens</p>
             <button 
               onClick={() => setShowMinesGame(true)}
               className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded"
